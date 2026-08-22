@@ -1,69 +1,8 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Home";
 }
 
-@model List<Student>
-
-
-
 <div class="text-center">
-    <h1 class="display-4 responsive">Study Mate</h1>
-    <p>Welcome to Study Mate <a asp-controller="Study Mate" asp-action="Index"></a></p>
-    <div class="container">
-        <form asp-controller="Home" asp-action="Index">
-            <div class="row searchFilter">
-                <div class="col-sm-12">
-                    <div class="input-group">
-
-                        <input id="searchString" type="text" name="SearchString" class="form-control" placeholder="Find your study mate here....">
-                        <button id="searchBtn" type="submit" class="btn btn-secondary btn-search">Search</button>
-                    </div>
-                </div>
-            </div>
-        </form>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>
-                        Student Name
-                    </th>
-                    <th>
-                        Major
-                    </th>
-                    <th>
-                        Email
-                    </th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Name)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.Major)
-                        </td>
-                        <td>
-                            @Html.DisplayFor(modelItem => item.EmailId)
-                        </td>
-                        <td>
-                            <a href="mailto:@item.EmailId">Connect</a> 
-                            @*<a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                            <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>*@
-                        </td>
-                    </tr>
-               }
-            </tbody>
-        </table>
-    </div>
-</div>
-
-
-
-
-
-<script src="./js/bootstrap.bundle.min.js"></script>
+    <h1 class="display-4">StudyMate</h1>
+    <p class="lead">Find study partners in the courses you are actually taking.</p>
 </div>
