@@ -107,7 +107,12 @@ else
             var tag = (event.target.tagName || '').toLowerCase();
             if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
 
-            var button = document.querySelector('[data-shortcut="' + event.key.toLowerCase() + '"]');
+            // Only single letters are valid shortcuts. Interpolating an arbitrary key
+            // such as " or ] into the selector below would raise a SyntaxError.
+            var key = event.key.toLowerCase();
+            if (!/^[a-z]$/.test(key)) return;
+
+            var button = document.querySelector('[data-shortcut="' + key + '"]');
             if (button) {
                 event.preventDefault();
                 button.click();

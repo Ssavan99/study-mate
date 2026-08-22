@@ -58,11 +58,22 @@ namespace StudyMate.Controllers
                 return NotFound();
             }
 
-            var alreadyExists = await _db.StudyRequests.AnyAsync(r =>
-                (r.FromStudentId == studentId.Value && r.ToStudentId == id) ||
-                (r.FromStudentId == id && r.ToStudentId == studentId.Value));
+            // A request may already exist in the other direction — they asked first. Saying
+            // nothing would look like the button did not work, so point at the inbox where
+            // the request is actually waiting.
+            var incoming = await _db.StudyRequests.AnyAsync(r =>
+                r.FromStudentId == id && r.ToStudentId == studentId.Value);
 
-            if (!alreadyExists)
+            if (incoming)
+            {
+                TempData["Sent"] = "They already asked you — their request is waiting in Requests.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var alreadySent = await _db.StudyRequests.AnyAsync(r =>
+                r.FromStudentId == studentId.Value && r.ToStudentId == id);
+
+            if (!alreadySent)
             {
                 _db.StudyRequests.Add(new StudyRequest
                 {

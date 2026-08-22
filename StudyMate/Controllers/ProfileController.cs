@@ -80,29 +80,50 @@ namespace StudyMate.Controllers
 
             // Only course ids that actually exist are accepted, so a tampered form
             // cannot create enrolments against unknown courses.
-            var validCourseIds = await _db.Courses
-                .Where(c => model.SelectedCourseIds.Contains(c.CourseId))
-                .Select(c => c.CourseId)
-                .ToListAsync();
+            var desiredCourseIds = (await _db.Courses
+                    .Where(c => model.SelectedCourseIds.Contains(c.CourseId))
+                    .Select(c => c.CourseId)
+                    .ToListAsync())
+                .ToHashSet();
 
-            student.Enrollments.Clear();
-            foreach (var courseId in validCourseIds.Distinct())
+            // These collections are diffed rather than cleared and rebuilt. Both entities
+            // have composite keys, so re-adding a row that is still in the change tracker
+            // as Deleted collides on its key and SaveChanges throws. Diffing also avoids
+            // rewriting every row on a save that changed nothing.
+            foreach (var removed in student.Enrollments.Where(e => !desiredCourseIds.Contains(e.CourseId)).ToList())
+            {
+                student.Enrollments.Remove(removed);
+            }
+
+            var existingCourseIds = student.Enrollments.Select(e => e.CourseId).ToHashSet();
+            foreach (var courseId in desiredCourseIds.Except(existingCourseIds))
             {
                 student.Enrollments.Add(new Enrollment { StudentId = student.StudentId, CourseId = courseId });
             }
 
-            student.Availability.Clear();
-            foreach (var key in model.SelectedSlots.Distinct())
+            var desiredSlots = new HashSet<(DayOfWeek Day, TimeBlock Block)>();
+            foreach (var key in model.SelectedSlots)
             {
                 if (ProfileEditViewModel.TryParseSlot(key, out var day, out var block))
                 {
-                    student.Availability.Add(new AvailabilitySlot
-                    {
-                        StudentId = student.StudentId,
-                        Day = day,
-                        Block = block
-                    });
+                    desiredSlots.Add((day, block));
                 }
+            }
+
+            foreach (var removed in student.Availability.Where(a => !desiredSlots.Contains((a.Day, a.Block))).ToList())
+            {
+                student.Availability.Remove(removed);
+            }
+
+            var existingSlots = student.Availability.Select(a => (a.Day, a.Block)).ToHashSet();
+            foreach (var (day, block) in desiredSlots.Except(existingSlots))
+            {
+                student.Availability.Add(new AvailabilitySlot
+                {
+                    StudentId = student.StudentId,
+                    Day = day,
+                    Block = block
+                });
             }
 
             await _db.SaveChangesAsync();

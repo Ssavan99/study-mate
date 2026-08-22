@@ -17,12 +17,23 @@ namespace StudyMate.Data
     {
         private const int RandomSeed = 20260822;
 
+        /// <summary>
+        /// Assumes a single instance owns the database. That holds on the free tier, where
+        /// each container has its own ephemeral SQLite file — two runners would both pass
+        /// the emptiness check and collide on the unique indexes.
+        /// </summary>
         public static async Task SeedAsync(AppDbContext db, IPasswordHasher<Student> passwordHasher)
         {
             if (await db.Students.AnyAsync())
             {
                 return;
             }
+
+            // Students are saved before their enrolments, so a crash between the two would
+            // leave the emptiness check above satisfied by students who have no courses and
+            // no availability. Every match would then score near zero and the demonstration
+            // would look broken rather than failed. One transaction makes it all or nothing.
+            await using var transaction = await db.Database.BeginTransactionAsync();
 
             var random = new Random(RandomSeed);
 
@@ -49,6 +60,8 @@ namespace StudyMate.Data
 
             await db.SaveChangesAsync();
             await SeedRequestsAsync(db, students, random);
+
+            await transaction.CommitAsync();
         }
 
         // --- courses --------------------------------------------------------
