@@ -55,6 +55,27 @@ a:hover {
     color: var(--ink) !important;
 }
 
+/* The logout control is a form button so it posts; make it sit on the same
+   baseline as the surrounding nav links rather than inheriting button metrics. */
+.navbar .nav-item form {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+.navbar button.nav-link {
+    background: none;
+    border: 0;
+    padding: 0.5rem 0.5rem !important;
+    line-height: inherit;
+    text-decoration: none;
+}
+
+.navbar .navbar-text {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
 .footer {
     position: absolute;
     bottom: 0;
@@ -131,8 +152,7 @@ a:hover {
 .deck-shadow {
     position: absolute;
     left: 50%;
-    right: 0;
-    height: 40px;
+    height: 44px;
     background-color: var(--surface);
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -140,15 +160,15 @@ a:hover {
 }
 
 .deck-shadow-1 {
-    top: -6px;
+    top: -7px;
     width: 96%;
-    opacity: 0.85;
+    opacity: 0.9;
 }
 
 .deck-shadow-2 {
-    top: -12px;
+    top: -14px;
     width: 92%;
-    opacity: 0.6;
+    opacity: 0.65;
 }
 
 .match-card {
