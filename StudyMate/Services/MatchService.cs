@@ -15,7 +15,7 @@ namespace StudyMate.Services
 
         public async Task<IReadOnlyList<MatchResult>> GetMatchesAsync(
             int studentId,
-            int take = 50,
+            int? take = null,
             CancellationToken cancellationToken = default)
         {
             var viewer = await _db.Students
@@ -37,14 +37,17 @@ namespace StudyMate.Services
                 .Where(s => !excludedIds.Contains(s.StudentId))
                 .Include(s => s.Enrollments).ThenInclude(e => e.Course)
                 .Include(s => s.Availability)
+                // Two collection includes in one query multiply rows together; split them
+                // so a student with 6 courses and 21 slots costs 27 rows, not 126.
+                .AsSplitQuery()
                 .ToListAsync(cancellationToken);
 
-            return candidates
+            var ranked = candidates
                 .Select(candidate => MatchScorer.Score(viewer, candidate))
                 .OrderByDescending(m => m.Score)
-                .ThenBy(m => m.Candidate.Name, StringComparer.OrdinalIgnoreCase)
-                .Take(take)
-                .ToList();
+                .ThenBy(m => m.Candidate.Name, StringComparer.OrdinalIgnoreCase);
+
+            return take.HasValue ? ranked.Take(take.Value).ToList() : ranked.ToList();
         }
 
         /// <summary>

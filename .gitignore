@@ -365,3 +365,6 @@ FodyWeavers.xsd
 *.db
 *.db-shm
 *.db-wal
+
+# Local Claude Code launch config (dev convenience, not part of the project)
+.claude/

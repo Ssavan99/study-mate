@@ -9,6 +9,7 @@ namespace StudyMate.Services
         /// themselves, anyone already involved in a study request either way, and anyone
         /// the student has passed on.
         /// </summary>
-        Task<IReadOnlyList<MatchResult>> GetMatchesAsync(int studentId, int take = 50, CancellationToken cancellationToken = default);
+        /// <param name="take">Maximum results to return, or null for all of them.</param>
+        Task<IReadOnlyList<MatchResult>> GetMatchesAsync(int studentId, int? take = null, CancellationToken cancellationToken = default);
     }
 }

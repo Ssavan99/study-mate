@@ -127,39 +127,81 @@ namespace StudyMate.Tests
         }
 
         [Fact]
-        public void OppositeNoiseAndPace_ScoreNothingForThoseDimensions()
+        public void EverySingleStyleDimensionAtItsWorst_ScoresNothing()
         {
             var viewer = TestData.Student(1, noise: NoiseLevel.Silent, pace: StudyPace.Steady, group: GroupSize.OneOnOne);
             var candidate = TestData.Student(2, noise: NoiseLevel.Discussion, pace: StudyPace.Crammer, group: GroupSize.SmallGroup);
 
-            // Noise and pace are maximally distant and group sizes are incompatible.
-            Assert.Equal(0, StylePoints(MatchScorer.Score(viewer, candidate)));
+            var result = MatchScorer.Score(viewer, candidate);
+
+            Assert.Equal(0, StylePoints(result));
+            // No reason is emitted at all when a dimension group scores nothing, so assert
+            // the absence explicitly rather than relying on an empty sum.
+            Assert.DoesNotContain(result.Reasons, r => r.Kind == MatchReasonKind.StudyStyle);
+        }
+
+        // Each of the following holds two dimensions identical so the third is isolated,
+        // which pins the exact partial-credit tier rather than just "somewhere in between".
+
+        [Theory]
+        [InlineData(NoiseLevel.Silent, MatchScorer.MaxNoisePoints)]                 // identical
+        [InlineData(NoiseLevel.Quiet, MatchScorer.MaxNoisePoints / 2)]              // adjacent
+        [InlineData(NoiseLevel.Discussion, 0)]                                      // opposite
+        public void NoiseDimension_ScoresByDistance(NoiseLevel candidateNoise, int expectedNoisePoints)
+        {
+            var viewer = TestData.Student(1, noise: NoiseLevel.Silent, pace: StudyPace.Steady, group: GroupSize.OneOnOne);
+            var candidate = TestData.Student(2, noise: candidateNoise, pace: StudyPace.Steady, group: GroupSize.OneOnOne);
+
+            var expected = expectedNoisePoints + MatchScorer.MaxPacePoints + MatchScorer.MaxGroupPoints;
+
+            Assert.Equal(expected, StylePoints(MatchScorer.Score(viewer, candidate)));
+        }
+
+        [Theory]
+        [InlineData(StudyPace.Steady, MatchScorer.MaxPacePoints)]
+        [InlineData(StudyPace.Mixed, MatchScorer.MaxPacePoints / 2)]
+        [InlineData(StudyPace.Crammer, 0)]
+        public void PaceDimension_ScoresByDistance(StudyPace candidatePace, int expectedPacePoints)
+        {
+            var viewer = TestData.Student(1, noise: NoiseLevel.Quiet, pace: StudyPace.Steady, group: GroupSize.OneOnOne);
+            var candidate = TestData.Student(2, noise: NoiseLevel.Quiet, pace: candidatePace, group: GroupSize.OneOnOne);
+
+            var expected = MatchScorer.MaxNoisePoints + expectedPacePoints + MatchScorer.MaxGroupPoints;
+
+            Assert.Equal(expected, StylePoints(MatchScorer.Score(viewer, candidate)));
+        }
+
+        [Theory]
+        [InlineData(GroupSize.Either, GroupSize.OneOnOne, true)]
+        [InlineData(GroupSize.Either, GroupSize.SmallGroup, true)]
+        [InlineData(GroupSize.Either, GroupSize.Either, true)]
+        [InlineData(GroupSize.OneOnOne, GroupSize.OneOnOne, true)]
+        [InlineData(GroupSize.OneOnOne, GroupSize.SmallGroup, false)]
+        public void GroupSizeDimension_AwardsPointsOnlyWhenCompatible(GroupSize viewerSize, GroupSize candidateSize, bool compatible)
+        {
+            var viewer = TestData.Student(1, noise: NoiseLevel.Quiet, pace: StudyPace.Steady, group: viewerSize);
+            var candidate = TestData.Student(2, noise: NoiseLevel.Quiet, pace: StudyPace.Steady, group: candidateSize);
+
+            var expected = MatchScorer.MaxNoisePoints + MatchScorer.MaxPacePoints
+                           + (compatible ? MatchScorer.MaxGroupPoints : 0);
+
+            Assert.Equal(expected, StylePoints(MatchScorer.Score(viewer, candidate)));
         }
 
         [Fact]
-        public void AdjacentNoisePreferences_ScorePartialCredit()
+        public void AFlexibleGroupSizeStillEarnsAWrittenReason()
         {
-            var viewer = TestData.Student(1, noise: NoiseLevel.Silent);
-            var candidate = TestData.Student(2, noise: NoiseLevel.Quiet);
+            // Only the group dimension scores here, and it scores because one side is
+            // flexible rather than because both agree. The text must still say something.
+            var viewer = TestData.Student(1, noise: NoiseLevel.Silent, pace: StudyPace.Steady, group: GroupSize.Either);
+            var candidate = TestData.Student(2, noise: NoiseLevel.Discussion, pace: StudyPace.Crammer, group: GroupSize.OneOnOne);
 
-            var full = TestData.Student(3, noise: NoiseLevel.Silent);
+            var reason = MatchScorer.Score(viewer, candidate).Reasons
+                .Single(r => r.Kind == MatchReasonKind.StudyStyle);
 
-            var partialScore = MatchScorer.Score(viewer, candidate).Score;
-            var fullScore = MatchScorer.Score(viewer, full).Score;
-
-            Assert.True(partialScore > 0);
-            Assert.True(partialScore < fullScore);
-        }
-
-        [Fact]
-        public void EitherGroupSize_IsCompatibleWithEverything()
-        {
-            var flexible = TestData.Student(1, group: GroupSize.Either);
-            var oneOnOne = TestData.Student(2, group: GroupSize.OneOnOne);
-            var smallGroup = TestData.Student(3, group: GroupSize.SmallGroup);
-
-            Assert.True(StylePoints(MatchScorer.Score(flexible, oneOnOne)) >= MatchScorer.MaxGroupPoints);
-            Assert.True(StylePoints(MatchScorer.Score(flexible, smallGroup)) >= MatchScorer.MaxGroupPoints);
+            Assert.Equal(MatchScorer.MaxGroupPoints, reason.Points);
+            Assert.NotEqual("Different working styles", reason.Text);
+            Assert.Contains("group size", reason.Text, StringComparison.OrdinalIgnoreCase);
         }
 
         // --- major ----------------------------------------------------------
@@ -288,6 +330,47 @@ namespace StudyMate.Tests
                 .WithCourses(Algorithms, Physics).WithAvailability((DayOfWeek.Monday, TimeBlock.Morning));
 
             Assert.Equal(MatchScorer.Score(viewer, candidate).Score, MatchScorer.Score(candidate, viewer).Score);
+        }
+
+        [Fact]
+        public void UnloadedCourseNavigation_ThrowsInsteadOfSilentlyScoringLower()
+        {
+            // Simulates a caller that included Enrollments but forgot ThenInclude(e => e.Course).
+            // Scoring off the loaded objects would quietly drop 25 points; it must fail loudly.
+            var viewer = TestData.Student(1).WithCourses(Algorithms);
+            var candidate = TestData.Student(2);
+            candidate.Enrollments.Add(new Enrollment { StudentId = 2, CourseId = Algorithms.CourseId, Course = null });
+
+            var ex = Assert.Throws<InvalidOperationException>(() => MatchScorer.Score(viewer, candidate));
+            Assert.Contains("ThenInclude", ex.Message);
+        }
+
+        [Fact]
+        public void EveryAwardedPointHasAnExplanation()
+        {
+            // Exhaustive over the style dimensions: no combination may score points
+            // while leaving the reason text as the "nothing matched" fallback.
+            foreach (NoiseLevel vn in Enum.GetValues<NoiseLevel>())
+            foreach (StudyPace vp in Enum.GetValues<StudyPace>())
+            foreach (GroupSize vg in Enum.GetValues<GroupSize>())
+            foreach (NoiseLevel cn in Enum.GetValues<NoiseLevel>())
+            foreach (StudyPace cp in Enum.GetValues<StudyPace>())
+            foreach (GroupSize cg in Enum.GetValues<GroupSize>())
+            {
+                var viewer = TestData.Student(1, noise: vn, pace: vp, group: vg);
+                var candidate = TestData.Student(2, noise: cn, pace: cp, group: cg);
+
+                var result = MatchScorer.Score(viewer, candidate);
+
+                Assert.Equal(result.Score, result.Reasons.Sum(r => r.Points));
+                Assert.All(result.Reasons, r => Assert.False(string.IsNullOrWhiteSpace(r.Text)));
+
+                var style = result.Reasons.SingleOrDefault(r => r.Kind == MatchReasonKind.StudyStyle);
+                if (style != null)
+                {
+                    Assert.NotEqual("Different working styles", style.Text);
+                }
+            }
         }
 
         [Fact]

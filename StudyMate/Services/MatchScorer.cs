@@ -37,8 +37,20 @@ namespace StudyMate.Services
 
             var reasons = new List<MatchReason>();
 
-            var sharedCourses = SharedCourses(viewer, candidate);
-            var coursePoints = Math.Min(sharedCourses.Count * PointsPerSharedCourse, MaxCoursePoints);
+            // Points are counted from course ids, not from the loaded Course objects, so a
+            // caller that forgot ThenInclude(e => e.Course) cannot silently lose up to 60
+            // points and produce a plausible but wrong ranking.
+            var sharedCourseIds = SharedCourseIds(viewer, candidate);
+            var sharedCourses = NameSharedCourses(candidate, sharedCourseIds);
+
+            if (sharedCourses.Count != sharedCourseIds.Count)
+            {
+                throw new InvalidOperationException(
+                    $"Student {candidate.StudentId} has {sharedCourseIds.Count} shared courses but only " +
+                    $"{sharedCourses.Count} could be named. Load enrolments with ThenInclude(e => e.Course).");
+            }
+
+            var coursePoints = Math.Min(sharedCourseIds.Count * PointsPerSharedCourse, MaxCoursePoints);
             if (coursePoints > 0)
             {
                 reasons.Add(new MatchReason
@@ -95,16 +107,29 @@ namespace StudyMate.Services
             };
         }
 
-        public static List<Course> SharedCourses(Student viewer, Student candidate)
+        /// <summary>Course ids both students are enrolled in. Does not require Course to be loaded.</summary>
+        public static HashSet<int> SharedCourseIds(Student viewer, Student candidate)
         {
-            var viewerCourseIds = viewer.Enrollments.Select(e => e.CourseId).ToHashSet();
+            var viewerCourseIds = (viewer.Enrollments ?? Enumerable.Empty<Enrollment>())
+                .Select(e => e.CourseId)
+                .ToHashSet();
 
-            return candidate.Enrollments
-                .Where(e => viewerCourseIds.Contains(e.CourseId) && e.Course != null)
+            return (candidate.Enrollments ?? Enumerable.Empty<Enrollment>())
+                .Select(e => e.CourseId)
+                .Where(viewerCourseIds.Contains)
+                .ToHashSet();
+        }
+
+        public static List<Course> SharedCourses(Student viewer, Student candidate) =>
+            NameSharedCourses(candidate, SharedCourseIds(viewer, candidate));
+
+        private static List<Course> NameSharedCourses(Student candidate, HashSet<int> sharedCourseIds) =>
+            (candidate.Enrollments ?? Enumerable.Empty<Enrollment>())
+                .Where(e => sharedCourseIds.Contains(e.CourseId) && e.Course != null)
                 .Select(e => e.Course)
+                .DistinctBy(c => c.CourseId)
                 .OrderBy(c => c.Code, StringComparer.OrdinalIgnoreCase)
                 .ToList();
-        }
 
         public static List<AvailabilitySlot> SharedSlots(Student viewer, Student candidate)
         {
@@ -148,7 +173,7 @@ namespace StudyMate.Services
             var pacePoints = paceDistance switch
             {
                 0 => MaxPacePoints,
-                1 => 2,
+                1 => MaxPacePoints / 2,
                 _ => 0
             };
             points += pacePoints;
@@ -167,13 +192,14 @@ namespace StudyMate.Services
             if (groupCompatible)
             {
                 points += MaxGroupPoints;
-                if (viewer.PreferredGroupSize == candidate.PreferredGroupSize)
-                {
-                    parts.Add(DescribeGroup(candidate.PreferredGroupSize));
-                }
+                parts.Add(viewer.PreferredGroupSize == candidate.PreferredGroupSize
+                    ? DescribeGroup(candidate.PreferredGroupSize)
+                    : "flexible on group size");
             }
 
-            text = parts.Count > 0
+            // The fallback text is only correct when nothing scored. Every awarded point
+            // must have a phrase attached to it, or the score stops being explainable.
+            text = points > 0
                 ? string.Join(" · ", parts).ToSentenceCase()
                 : "Different working styles";
 

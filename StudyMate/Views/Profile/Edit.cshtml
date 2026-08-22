@@ -1,0 +1,143 @@
+@model ProfileEditViewModel
+@{
+    ViewData["Title"] = "Your profile";
+    var days = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday };
+    var blocks = new[] { TimeBlock.Morning, TimeBlock.Afternoon, TimeBlock.Evening };
+    var selected = Model.SelectedSlots.ToHashSet();
+}
+
+<h1 class="h4 mb-1">Your profile</h1>
+<p class="text-muted small mb-4">
+    Courses and availability drive your matches — the more accurate these are, the better the ranking.
+</p>
+
+@if (TempData["Saved"] != null)
+{
+    <div class="alert alert-success py-2 small">@TempData["Saved"]</div>
+}
+
+<form asp-action="Edit" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+
+    <section class="profile-section">
+        <h2 class="h6 text-uppercase text-muted">About you</h2>
+        <div class="form-row">
+            <div class="form-group col-md-5">
+                <label asp-for="Name"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+            <div class="form-group col-md-5">
+                <label asp-for="Major"></label>
+                <input asp-for="Major" class="form-control" />
+                <span asp-validation-for="Major" class="text-danger small"></span>
+            </div>
+            <div class="form-group col-md-2">
+                <label asp-for="Year"></label>
+                <select asp-for="Year" class="form-control">
+                    <option value="1">1st</option>
+                    <option value="2">2nd</option>
+                    <option value="3">3rd</option>
+                    <option value="4">4th</option>
+                    <option value="5">Grad</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label asp-for="Bio"></label>
+            <textarea asp-for="Bio" class="form-control" rows="2" maxlength="280"
+                      placeholder="What you are working on, and what you want from a study partner."></textarea>
+            <span asp-validation-for="Bio" class="text-danger small"></span>
+        </div>
+    </section>
+
+    <section class="profile-section">
+        <h2 class="h6 text-uppercase text-muted">Courses</h2>
+        <p class="text-muted small">Shared courses are the strongest signal in the match score.</p>
+        <div class="course-grid">
+            @foreach (var group in Model.AllCourses.GroupBy(c => c.Department).OrderBy(g => g.Key))
+            {
+                <fieldset class="course-group">
+                    <legend class="h6 small text-muted">@group.Key</legend>
+                    @foreach (var course in group)
+                    {
+                        var id = $"course-{course.CourseId}";
+                        <div class="custom-control custom-checkbox">
+                            <input class="custom-control-input" type="checkbox" id="@id"
+                                   name="SelectedCourseIds" value="@course.CourseId"
+                                   @(Model.SelectedCourseIds.Contains(course.CourseId) ? "checked" : "") />
+                            <label class="custom-control-label" for="@id">
+                                <strong>@course.Code</strong>
+                                <span class="text-muted d-block small">@course.Title</span>
+                            </label>
+                        </div>
+                    }
+                </fieldset>
+            }
+        </div>
+    </section>
+
+    <section class="profile-section">
+        <h2 class="h6 text-uppercase text-muted">When you are free</h2>
+        <p class="text-muted small">Tick every block you could realistically meet in.</p>
+        <div class="table-responsive">
+            <table class="table table-sm availability-grid">
+                <thead>
+                    <tr>
+                        <th scope="col"></th>
+                        @foreach (var day in days)
+                        {
+                            <th scope="col" class="text-center">@day.ToString().Substring(0, 3)</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var block in blocks)
+                    {
+                        <tr>
+                            <th scope="row" class="text-muted font-weight-normal">@block</th>
+                            @foreach (var day in days)
+                            {
+                                var key = ProfileEditViewModel.SlotKey(day, block);
+                                var id = $"slot-{key}";
+                                <td class="text-center">
+                                    <input type="checkbox" id="@id" name="SelectedSlots" value="@key"
+                                           aria-label="@day @block"
+                                           @(selected.Contains(key) ? "checked" : "") />
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="profile-section">
+        <h2 class="h6 text-uppercase text-muted">How you like to work</h2>
+        <div class="form-row">
+            <div class="form-group col-md-4">
+                <label asp-for="PreferredNoise"></label>
+                <select asp-for="PreferredNoise" class="form-control"
+                        asp-items="Html.GetEnumSelectList<NoiseLevel>()"></select>
+            </div>
+            <div class="form-group col-md-4">
+                <label asp-for="Pace"></label>
+                <select asp-for="Pace" class="form-control"
+                        asp-items="Html.GetEnumSelectList<StudyPace>()"></select>
+            </div>
+            <div class="form-group col-md-4">
+                <label asp-for="PreferredGroupSize"></label>
+                <select asp-for="PreferredGroupSize" class="form-control"
+                        asp-items="Html.GetEnumSelectList<GroupSize>()"></select>
+            </div>
+        </div>
+    </section>
+
+    <button type="submit" class="btn btn-primary">Save profile</button>
+    <a class="btn btn-link" asp-controller="Matches" asp-action="Index">Back to matches</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -33,7 +33,7 @@ namespace StudyMate.Data.Migrations
                     StudentId = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     Name = table.Column<string>(type: "TEXT", maxLength: 80, nullable: false),
-                    Email = table.Column<string>(type: "TEXT", maxLength: 160, nullable: false),
+                    Email = table.Column<string>(type: "TEXT", maxLength: 160, nullable: false, collation: "NOCASE"),
                     PasswordHash = table.Column<string>(type: "TEXT", nullable: false),
                     Major = table.Column<string>(type: "TEXT", maxLength: 80, nullable: true),
                     Year = table.Column<int>(type: "INTEGER", nullable: false),
@@ -103,6 +103,13 @@ namespace StudyMate.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Passes", x => new { x.StudentId, x.PassedStudentId });
+                    table.CheckConstraint("CK_Pass_NotSelf", "StudentId <> PassedStudentId");
+                    table.ForeignKey(
+                        name: "FK_Passes_Students_PassedStudentId",
+                        column: x => x.PassedStudentId,
+                        principalTable: "Students",
+                        principalColumn: "StudentId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Passes_Students_StudentId",
                         column: x => x.StudentId,
@@ -126,6 +133,7 @@ namespace StudyMate.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_StudyRequests", x => x.StudyRequestId);
+                    table.CheckConstraint("CK_StudyRequest_NotSelf", "FromStudentId <> ToStudentId");
                     table.ForeignKey(
                         name: "FK_StudyRequests_Students_FromStudentId",
                         column: x => x.FromStudentId,
@@ -137,7 +145,7 @@ namespace StudyMate.Data.Migrations
                         column: x => x.ToStudentId,
                         principalTable: "Students",
                         principalColumn: "StudentId",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -150,6 +158,11 @@ namespace StudyMate.Data.Migrations
                 name: "IX_Enrollments_CourseId",
                 table: "Enrollments",
                 column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Passes_PassedStudentId",
+                table: "Passes",
+                column: "PassedStudentId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Students_Email",

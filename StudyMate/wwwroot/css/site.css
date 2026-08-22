@@ -1,77 +1,384 @@
-﻿/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
-for details on configuring this project to bundle and minify static web assets. */
-
-a.navbar-brand {
-  white-space: normal;
-  text-align: center;
-  word-break: break-all;
+:root {
+    --ink: #1d2433;
+    --ink-soft: #5a6478;
+    --line: #e3e7ee;
+    --surface: #ffffff;
+    --canvas: #f6f7fa;
+    --accent: #3d5afe;
+    --accent-dark: #2c3fc4;
+    --accent-wash: #eef1ff;
+    --positive: #1f8a5a;
 }
 
-/* Provide sufficient contrast against white background */
-a {
-  color: #0366d6;
-}
-
-.btn-primary {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
-}
-
-.nav-pills .nav-link.active, .nav-pills .show > .nav-link {
-  color: #fff;
-  background-color: #1b6ec2;
-  border-color: #1861ac;
-}
-
-/* Sticky footer styles
--------------------------------------------------- */
 html {
-  font-size: 14px;
-}
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.border-top {
-  border-top: 1px solid #e5e5e5;
-}
-.border-bottom {
-  border-bottom: 1px solid #e5e5e5;
-}
-
-.box-shadow {
-  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
-}
-
-button.accept-policy {
-  font-size: 1rem;
-  line-height: inherit;
-}
-
-/* Sticky footer styles
--------------------------------------------------- */
-html {
-  position: relative;
-  min-height: 100%;
+    position: relative;
+    min-height: 100%;
+    font-size: 15px;
 }
 
 body {
-  /* Margin bottom by footer height */
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    background-color: var(--canvas);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
 }
-.footer {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  white-space: nowrap;
-  line-height: 60px; /* Vertically center the text there */
+
+a {
+    color: var(--accent);
 }
+
+a:hover {
+    color: var(--accent-dark);
+}
+
+/* --- chrome ------------------------------------------------------------ */
 
 .navbar {
     position: sticky;
     top: 0;
     z-index: 100;
+    background-color: var(--surface) !important;
+    border-bottom: 1px solid var(--line) !important;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink) !important;
+}
+
+.navbar .nav-link {
+    color: var(--ink-soft) !important;
+}
+
+.navbar .nav-link:hover {
+    color: var(--ink) !important;
+}
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: var(--surface);
+    border-top: 1px solid var(--line) !important;
+}
+
+.btn-primary {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--accent-dark);
+    border-color: var(--accent-dark);
+}
+
+.btn:focus,
+.form-control:focus {
+    box-shadow: 0 0 0 3px var(--accent-wash);
+}
+
+/* --- landing ----------------------------------------------------------- */
+
+.hero {
+    padding: 3rem 0 2rem;
+}
+
+.hero .display-4 {
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+
+.hero .lead {
+    max-width: 40rem;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 1.05rem;
+}
+
+.demo-panel {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.5rem;
+}
+
+.persona-card {
+    border-color: var(--line);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.persona-card:hover {
+    box-shadow: 0 6px 18px rgba(29, 36, 51, 0.09);
+    transform: translateY(-2px);
+}
+
+.how-it-works h3 {
+    letter-spacing: 0.01em;
+}
+
+/* --- the review deck --------------------------------------------------- */
+
+.deck {
+    position: relative;
+    max-width: 34rem;
+    margin: 0 auto;
+}
+
+/* Stacked-paper effect suggesting more candidates behind the current one. */
+.deck-shadow {
+    position: absolute;
+    left: 50%;
+    right: 0;
+    height: 40px;
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    transform: translateX(-50%);
+}
+
+.deck-shadow-1 {
+    top: -6px;
+    width: 96%;
+    opacity: 0.85;
+}
+
+.deck-shadow-2 {
+    top: -12px;
+    width: 92%;
+    opacity: 0.6;
+}
+
+.match-card {
+    position: relative;
+    border-color: var(--line);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(29, 36, 51, 0.07);
+}
+
+.match-card .card-body {
+    padding: 1.5rem;
+}
+
+.match-card .card-footer {
+    border-top: 1px solid var(--line);
+    padding: 1rem 1.5rem;
+}
+
+.bio {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    margin-bottom: 1.25rem;
+}
+
+.score {
+    text-align: right;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.score-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.03em;
+}
+
+.score-max {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+}
+
+.reasons-heading {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.6rem;
+}
+
+.reason {
+    display: flex;
+    align-items: baseline;
+    padding: 0.4rem 0;
+    border-top: 1px solid var(--line);
+    font-size: 0.92rem;
+}
+
+.reason:first-child {
+    border-top: none;
+}
+
+.reason-points {
+    flex: 0 0 3rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--positive);
+    font-size: 0.85rem;
+}
+
+.reason-text {
+    color: var(--ink);
+}
+
+.shortcut-hint kbd {
+    background-color: var(--ink);
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.75rem;
+}
+
+.empty-state {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+}
+
+/* --- ranked list ------------------------------------------------------- */
+
+.match-table {
+    background-color: var(--surface);
+}
+
+.match-table thead th {
+    border-top: none;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+}
+
+.match-table .rank-col {
+    width: 3rem;
+}
+
+.score-pill {
+    display: inline-block;
+    min-width: 2.6rem;
+    text-align: center;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    background-color: var(--accent-wash);
+    color: var(--accent-dark);
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.reason-inline {
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
+
+.reason-inline .reason-points {
+    display: inline;
+    margin-right: 0.25rem;
+}
+
+/* --- profile ----------------------------------------------------------- */
+
+.profile-section {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-section > h2 {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.75rem;
+}
+
+.course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 1.25rem;
+}
+
+.course-group legend {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.3rem;
+    margin-bottom: 0.5rem;
+}
+
+.course-group .custom-control {
+    margin-bottom: 0.5rem;
+}
+
+.availability-grid th,
+.availability-grid td {
+    vertical-align: middle;
+}
+
+.availability-grid input[type="checkbox"] {
+    width: 1.1rem;
+    height: 1.1rem;
+    cursor: pointer;
+}
+
+/* --- requests ---------------------------------------------------------- */
+
+.request-list {
+    background-color: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.request-row {
+    padding: 0.85rem 1.25rem;
+    border-top: 1px solid var(--line);
+}
+
+.request-row:first-child {
+    border-top: none;
+}
+
+.status {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+}
+
+.status-pending {
+    background-color: #fff5e0;
+    color: #8a5a00;
+}
+
+.status-accepted {
+    background-color: #e4f5ec;
+    color: var(--positive);
+}
+
+.status-declined {
+    background-color: #f1f2f5;
+    color: var(--ink-soft);
+}
+
+/* --- small screens ----------------------------------------------------- */
+
+@media (max-width: 575.98px) {
+    .hero .display-4 {
+        font-size: 1.8rem;
+    }
+
+    .match-card .card-body,
+    .match-card .card-footer {
+        padding: 1.15rem;
+    }
+
+    .score-value {
+        font-size: 1.6rem;
+    }
+
+    .shortcut-hint {
+        display: none;
+    }
 }

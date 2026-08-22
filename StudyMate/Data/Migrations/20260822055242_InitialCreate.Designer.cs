@@ -11,7 +11,7 @@ using StudyMate.Data;
 namespace StudyMate.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260822054400_InitialCreate")]
+    [Migration("20260822055242_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -93,7 +93,12 @@ namespace StudyMate.Data.Migrations
 
                     b.HasKey("StudentId", "PassedStudentId");
 
-                    b.ToTable("Passes");
+                    b.HasIndex("PassedStudentId");
+
+                    b.ToTable("Passes", t =>
+                        {
+                            t.HasCheckConstraint("CK_Pass_NotSelf", "StudentId <> PassedStudentId");
+                        });
                 });
 
             modelBuilder.Entity("StudyMate.Models.Student", b =>
@@ -112,7 +117,8 @@ namespace StudyMate.Data.Migrations
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(160)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<bool>("IsDemo")
                         .HasColumnType("INTEGER");
@@ -178,7 +184,10 @@ namespace StudyMate.Data.Migrations
                     b.HasIndex("FromStudentId", "ToStudentId")
                         .IsUnique();
 
-                    b.ToTable("StudyRequests");
+                    b.ToTable("StudyRequests", t =>
+                        {
+                            t.HasCheckConstraint("CK_StudyRequest_NotSelf", "FromStudentId <> ToStudentId");
+                        });
                 });
 
             modelBuilder.Entity("StudyMate.Models.AvailabilitySlot", b =>
@@ -213,6 +222,12 @@ namespace StudyMate.Data.Migrations
 
             modelBuilder.Entity("StudyMate.Models.Pass", b =>
                 {
+                    b.HasOne("StudyMate.Models.Student", null)
+                        .WithMany()
+                        .HasForeignKey("PassedStudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("StudyMate.Models.Student", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
@@ -233,7 +248,7 @@ namespace StudyMate.Data.Migrations
                     b.HasOne("StudyMate.Models.Student", "ToStudent")
                         .WithMany()
                         .HasForeignKey("ToStudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("FromStudent");
