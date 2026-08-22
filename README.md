@@ -139,19 +139,6 @@ out on purpose, to keep the scope to something that is actually finished.
 
 ---
 
-## History
-
-StudyMate began as a four-person university group project in January 2022, by
-Sifat Syed, Savan Patel, Rachit Sharma and Yashaswi Mehra. That version was
-unfinished: the login form accepted any password, the matching feature the README
-described was never written, and the interface was assembled from templates.
-
-It was rebuilt and completed by Savan Patel in 2026 — the domain model, the scoring
-engine, authentication, the interface and the deployment are new work. The original
-commit history is preserved in this repository.
-
----
-
 ## License
 
 [MIT](LICENSE)
