@@ -1,6 +1,51 @@
-﻿@{
-    ViewData["Title"] = "Privacy Policy";
+@{
+    ViewData["Title"] = "About this deployment";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="h4 mb-3">About this deployment</h1>
+
+        <p>
+            StudyMate is a portfolio project. This deployment exists to demonstrate how the
+            matching works, not to run a real study-partner service.
+        </p>
+
+        <h2 class="h6 text-uppercase text-muted mt-4">The students are not real</h2>
+        <p>
+            Every profile you see is fictional and generated from a fixed script. Names,
+            courses, availability and biographies are invented. Any resemblance to a real
+            person is accidental.
+        </p>
+
+        <h2 class="h6 text-uppercase text-muted mt-4">If you create an account</h2>
+        <p>
+            Registration works, and your password is hashed rather than stored as text. But
+            the hosting tier this runs on has no persistent storage: the database is rebuilt
+            from scratch whenever the service restarts, redeploys, or spins down after about
+            fifteen minutes without traffic.
+        </p>
+        <p>
+            Anything you enter — your account, your profile, requests you send — is therefore
+            temporary and will disappear without warning. Please do not enter information you
+            would mind losing, and do not reuse a password from anywhere else.
+        </p>
+
+        <h2 class="h6 text-uppercase text-muted mt-4">What is not here</h2>
+        <p>
+            There is no email verification, no password reset, no moderation tooling and no
+            way to report another user. Those would all be prerequisites for running this as
+            a real service, and they are deliberately out of scope.
+        </p>
+
+        <h2 class="h6 text-uppercase text-muted mt-4">Tracking</h2>
+        <p>
+            No analytics, no advertising and no third-party trackers. The only cookie is the
+            one that keeps you signed in.
+        </p>
+
+        <p class="mt-4">
+            <a asp-controller="Home" asp-action="Index">Back to the start</a>
+        </p>
+    </div>
+</div>
