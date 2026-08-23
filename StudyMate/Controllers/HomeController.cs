@@ -1,95 +1,46 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using StudyMate.Data;
 using StudyMate.Models;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace StudyMate.Controllers
 {
     public class HomeController : Controller
     {
-        private AppDbContext _db;
-        private readonly ILogger<HomeController> _logger;
+        private readonly AppDbContext _db;
 
-        public HomeController(ILogger<HomeController> logger, AppDbContext db)
+        public HomeController(AppDbContext db)
         {
-            _logger = logger;
             _db = db;
         }
 
         public async Task<IActionResult> Index()
         {
-            ActionResult actionResult = View();
-            if (ModelState.IsValid)
+            if (User.Identity?.IsAuthenticated == true)
             {
-                var studentList = _db.Students.Where(s => s.StudentId > 0);
-                //var newVendor = new SmiPIM.Database.Models.Vendor { Name = vendor.Name };
-                //if(!searchString.Equals(null))
-                //{
-                //    bool containsInt = searchString.Any(char.IsDigit);
-                //    if (!containsInt)
-                //    {
-                //        List<Student> students = _db.Students.Where(s => s.Major == searchString).ToList();
-                //        Console.WriteLine(students);
-                //        if (students.Count == 0)
-                //        {
-                //            return NotFound();
-                //        }
-                //        return Ok(students);
-                //    }
-                //    else
-                //    {
-                //        //find from classes table
-                //    }
-                //}
-                return View(await studentList.ToListAsync());
+                return RedirectToAction("Index", "Matches");
             }
-            else
-            {
-                return View();
-            }
+
+            var personas = await _db.Students
+                .AsNoTracking()
+                .Where(s => s.IsDemo)
+                .Include(s => s.Enrollments)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+
+            return View(personas);
         }
 
-        public IActionResult Privacy()
-        {
-            return View();
-        }
+        public IActionResult Privacy() => View();
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-
-        [HttpGet]
-        public ActionResult Search(string searchString)
-        {
-            ActionResult actionResult = View();
-            if (ModelState.IsValid)
+            return View(new ErrorViewModel
             {
-                //var newVendor = new SmiPIM.Database.Models.Vendor { Name = vendor.Name };
-                bool containsInt = searchString.Any(char.IsDigit);
-                if (!containsInt)
-                {
-                    List<Student> students =_db.Students.Where(s => s.Major == searchString).ToList();
-                    Console.WriteLine(students);
-                    if(students.Count == 0)
-                    {
-                        return NotFound();
-                    }
-                    return Ok(students);
-                } else
-                {
-                    //find from classes table
-                }
-
-            }
-            return View();
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            });
         }
     }
 }

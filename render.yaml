@@ -1,0 +1,24 @@
+# Render blueprint. Pointing Render at this repo picks these settings up
+# automatically, so the service does not have to be configured by hand.
+#
+# The free plan has no persistent disk: the container filesystem is reset on every
+# deploy, restart and idle spin-down. That is intentional here — the SQLite database
+# is rebuilt from the seed on each start, so the demonstration always comes back
+# fully populated and no real data accumulates.
+services:
+  - type: web
+    name: study-mate
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+
+      # Optional. Set both in the Render dashboard to enable "Sign in with GitHub";
+      # leave them unset and the app runs without it. The secret is never committed.
+      - key: Authentication__GitHub__ClientId
+        sync: false
+      - key: Authentication__GitHub__ClientSecret
+        sync: false
