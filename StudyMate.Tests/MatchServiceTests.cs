@@ -100,6 +100,51 @@ namespace StudyMate.Tests
         }
 
         [Fact]
+        public async Task ACrossUniversityStudentIsExcludedEvenWithAPerfectCourseOverlap()
+        {
+            using (var arrange = new AppDbContext(_options))
+            {
+                // Same courses as the "Strong Match" (student 2), but a different
+                // university — the score would be identical to student 2's if it were
+                // computed, which is exactly why this has to be a hard filter and not
+                // something scored: no amount of course overlap should be able to
+                // outweigh it.
+                var algorithms = arrange.Courses.Single(c => c.Code == "CSCE 310");
+                var linearAlgebra = arrange.Courses.Single(c => c.Code == "MATH 314");
+                var otherSchool = TestData
+                    .Student(5, "Other School", university: "A Different University")
+                    .WithCourses(algorithms, linearAlgebra);
+
+                arrange.Students.Add(otherSchool);
+                await arrange.SaveChangesAsync();
+            }
+
+            using var context = new AppDbContext(_options);
+            var matches = await NewService(context).GetMatchesAsync(1);
+
+            Assert.DoesNotContain(matches, m => m.Candidate.StudentId == 5);
+        }
+
+        [Fact]
+        public async Task SameUniversityStudentsMatchNormallyEvenWhenAnotherUniversityAlsoExists()
+        {
+            using (var arrange = new AppDbContext(_options))
+            {
+                var otherSchool = TestData.Student(5, "Other School", university: "A Different University");
+                arrange.Students.Add(otherSchool);
+                await arrange.SaveChangesAsync();
+            }
+
+            using var context = new AppDbContext(_options);
+            var matches = await NewService(context).GetMatchesAsync(1);
+
+            // The existing same-university matches (2 and 3) are unaffected by the
+            // presence of a student at a different university.
+            Assert.Contains(matches, m => m.Candidate.StudentId == 2);
+            Assert.Contains(matches, m => m.Candidate.StudentId == 3);
+        }
+
+        [Fact]
         public async Task ExcludesStudentsTheViewerHasPassedOn()
         {
             using (var arrange = new AppDbContext(_options))

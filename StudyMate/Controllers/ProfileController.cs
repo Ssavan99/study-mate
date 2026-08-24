@@ -35,6 +35,7 @@ namespace StudyMate.Controllers
             {
                 Name = student.Name,
                 Major = student.Major,
+                University = student.University,
                 Year = student.Year,
                 Bio = student.Bio,
                 PreferredNoise = student.PreferredNoise,
@@ -72,6 +73,7 @@ namespace StudyMate.Controllers
 
             student.Name = model.Name.Trim();
             student.Major = model.Major.Trim();
+            student.University = model.University.Trim();
             student.Year = model.Year;
             student.Bio = model.Bio?.Trim();
             student.PreferredNoise = model.PreferredNoise;

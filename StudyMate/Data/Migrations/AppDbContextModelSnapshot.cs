@@ -142,6 +142,12 @@ namespace StudyMate.Data.Migrations
                     b.Property<int>("PreferredNoise")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("University")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
                     b.Property<int>("Year")
                         .HasColumnType("INTEGER");
 

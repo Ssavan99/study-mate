@@ -19,6 +19,14 @@ namespace StudyMate.Models
         [StringLength(80)]
         public string Major { get; set; }
 
+        /// <summary>
+        /// Hard-filters matching: only students who share a university ever appear in
+        /// each other's decks. There is no catalog of real universities to validate
+        /// against, so this is free text, same as Major.
+        /// </summary>
+        [Required, StringLength(120)]
+        public string University { get; set; }
+
         /// <summary>Year of study, 1-5. 5 covers graduate students.</summary>
         [Range(1, 5)]
         public int Year { get; set; } = 1;

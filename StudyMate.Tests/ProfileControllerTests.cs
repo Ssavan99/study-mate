@@ -59,6 +59,7 @@ namespace StudyMate.Tests
         {
             Name = "Test Student",
             Major = "Computer Science",
+            University = "Test University",
             Year = 2,
             Bio = "Testing",
             PreferredNoise = NoiseLevel.Quiet,

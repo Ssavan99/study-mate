@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace StudyMate.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class AddUniversity : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -36,6 +36,7 @@ namespace StudyMate.Data.Migrations
                     Email = table.Column<string>(type: "TEXT", maxLength: 160, nullable: false, collation: "NOCASE"),
                     PasswordHash = table.Column<string>(type: "TEXT", nullable: false),
                     Major = table.Column<string>(type: "TEXT", maxLength: 80, nullable: true),
+                    University = table.Column<string>(type: "TEXT", maxLength: 120, nullable: false, collation: "NOCASE"),
                     Year = table.Column<int>(type: "INTEGER", nullable: false),
                     Bio = table.Column<string>(type: "TEXT", maxLength: 280, nullable: true),
                     PreferredNoise = table.Column<int>(type: "INTEGER", nullable: false),

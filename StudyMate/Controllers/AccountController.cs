@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyMate.Data;
 using StudyMate.Models;
 using StudyMate.Models.ViewModels;
+using StudyMate.Services;
 
 namespace StudyMate.Controllers
 {
@@ -112,6 +113,7 @@ namespace StudyMate.Controllers
                 Name = model.Name.Trim(),
                 Email = email,
                 Major = model.Major.Trim(),
+                University = model.University.Trim(),
                 Year = model.Year,
                 IsDemo = false
             };
@@ -164,11 +166,28 @@ namespace StudyMate.Controllers
         }
 
         [HttpGet]
-        public IActionResult ExternalLoginCallback(string returnUrl = null)
+        public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null)
         {
             if (User.Identity?.IsAuthenticated != true)
             {
                 return RedirectToAction(nameof(Login));
+            }
+
+            // A brand-new GitHub-linked account starts with no University set, and
+            // University hard-filters matching — left blank, the account would never
+            // see or appear in anyone's deck. Route straight to the profile instead of
+            // dropping a silently broken account onto the matches page.
+            var studentId = User.GetStudentId();
+            var university = studentId == null
+                ? null
+                : await _db.Students
+                    .Where(s => s.StudentId == studentId.Value)
+                    .Select(s => s.University)
+                    .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(university))
+            {
+                return RedirectToAction("Edit", "Profile");
             }
 
             return RedirectToLocal(returnUrl);

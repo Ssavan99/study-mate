@@ -22,12 +22,20 @@
     <section class="profile-section">
         <h2 class="h6 text-uppercase text-muted">About you</h2>
         <div class="form-row">
-            <div class="form-group col-md-5">
+            <div class="form-group col-md-6">
                 <label asp-for="Name"></label>
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger small"></span>
             </div>
-            <div class="form-group col-md-5">
+            <div class="form-group col-md-6">
+                <label asp-for="University"></label>
+                <input asp-for="University" class="form-control" />
+                <span asp-validation-for="University" class="text-danger small"></span>
+                <small class="form-text text-muted">You only match with students at the same university.</small>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-10">
                 <label asp-for="Major"></label>
                 <input asp-for="Major" class="form-control" />
                 <span asp-validation-for="Major" class="text-danger small"></span>
