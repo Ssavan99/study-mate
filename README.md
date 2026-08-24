@@ -15,10 +15,13 @@ and show the reasoning behind every match.
 Most "find a study partner" tools are a directory with a search box. StudyMate is a
 matcher: a student enters their courses, their weekly availability and how they like
 to work, and the app scores every other student against them and returns a ranked
-deck of candidates.
+deck of candidates — restricted to their own university, so the deck is never full of
+people you could never actually meet.
 
-Each candidate is scored out of 100, and the score is broken down into the reasons
-that produced it — never presented as an unexplained number.
+The score itself is never shown. What you see instead is a **Great Match** or
+**Strong Match** badge for the strongest candidates, or a plain unlabeled card for
+everyone else — there is deliberately no "weak match" label. Every card carries the
+concrete reasons behind it, in plain language.
 
 ![The match review deck](docs/screenshots/match-deck.png)
 
@@ -32,10 +35,12 @@ ordering itself is visible:
 
 ## How the matching works
 
-`MatchScorer` compares two students across four dimensions. The weighting reflects
-what makes a study partnership work in practice: being in the same course matters
-far more than having a similar personality, and being free at the same time is a
-prerequisite for meeting at all.
+Two students are only ever compared if they share a **university** — that filter runs
+before anything else and cannot be outweighed by any amount of course overlap.
+Within that pool, `MatchScorer` compares students across four dimensions. The
+weighting reflects what makes a study partnership work in practice: being in the same
+course matters far more than having a similar personality, and being free at the same
+time is a prerequisite for meeting at all.
 
 | Dimension | Points | Notes |
 |---|---|---|
@@ -50,15 +55,17 @@ and someone who wants quiet can work together, someone who wants silence and som
 who wants discussion cannot. Group size is compatible when both agree or either is
 flexible.
 
-Every point a candidate earns is attached to a `MatchReason` carrying its own text,
-so the interface can always explain the total. This is enforced by a test that walks
-all 729 combinations of the three style preferences and asserts the reasons sum to
-the score.
+The 0-100 score drives the ranking and decides which of two tiers a card gets —
+**Great Match** at 75+, **Strong Match** at 55+ — but the number itself is never
+rendered anywhere in the interface. What is shown is the reasoning: every point a
+candidate earns is attached to a `MatchReason` carrying its own plain-language text,
+enforced by a test that walks all 729 combinations of the three style preferences and
+checks the reasons still sum to the score, even though that sum is never displayed.
 
 The scorer is deliberately free of Entity Framework so the ranking logic can be
-tested directly. `MatchService` adds the database query and the exclusion rules:
-never the viewer, never anyone already involved in a request in either direction,
-and never anyone the viewer has passed on.
+tested directly. `MatchService` adds the database query, the university filter, and
+the exclusion rules: never the viewer, never anyone already involved in a request in
+either direction, and never anyone the viewer has passed on.
 
 ---
 
@@ -94,7 +101,13 @@ docker build -t studymate . && docker run -p 10000:10000 studymate
 ## The rest of the app
 
 Profiles drive the matching, so course selection and a weekly availability grid are
-the substance of the profile page:
+the substance of the profile page. The fixed course list doesn't cover everything, so
+a student can add one as free text — there's no free catalog API to check it's real
+against, so it's validated as a department code plus a number and reused if someone
+else already added the same course, rather than fragmenting into near-duplicates.
+
+A profile picture is optional; anyone who hasn't set one gets a deterministic
+initials-on-color avatar instead, the same pattern GitHub and Slack use for a default:
 
 ![The profile editor](docs/screenshots/profile.png)
 
@@ -122,9 +135,14 @@ This is a demonstration deployment, and it is worth being specific about what th
 - **The data is fictional.** All 60 students are generated. Any resemblance to real
   people is accidental.
 - **The database resets whenever the service restarts.** The free hosting tier has no
-  persistent disk, so accounts created through registration, requests sent and
-  profile edits are lost on restart, redeploy, and after an idle spin-down. Within a
-  session everything persists normally. The seeded data always returns intact.
+  persistent disk, so accounts created through registration, requests sent, profile
+  edits and uploaded profile photos are all lost on restart, redeploy, and after an
+  idle spin-down. Within a session everything persists normally. The seeded data
+  always returns intact.
+- **University is free text, not a verified list.** There's no catalog to check it
+  against. Casing and leading/trailing whitespace are normalized on save, but
+  "University of Nebraska" and "University of Nebraska-Lincoln" would still be
+  treated as two different schools — spelling has to match exactly.
 - **The first request after an idle period takes about a minute.** The free tier spins
   the service down after 15 minutes without traffic.
 - **It is not built to hold real personal data.** There is no email verification, no
