@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="StudyMate">
+    <defs>
+        <clipPath id="overlap-clip">
+            <circle cx="24" cy="32" r="20" />
+        </clipPath>
+    </defs>
+    <!-- Two overlapping circles: the shared middle is the product's whole idea —
+         a match is where two students' courses, schedules and styles overlap. -->
+    <circle cx="24" cy="32" r="20" fill="#FB7185" />
+    <circle cx="40" cy="32" r="20" fill="#FDBA74" />
+    <circle cx="40" cy="32" r="20" fill="#F4795A" clip-path="url(#overlap-clip)" />
+</svg>

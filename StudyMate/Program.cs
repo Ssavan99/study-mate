@@ -120,6 +120,7 @@ if (githubEnabled)
                     Name = name,
                     Email = email,
                     Major = string.Empty,
+                    University = string.Empty,
                     Year = 1,
                     IsDemo = false
                 };

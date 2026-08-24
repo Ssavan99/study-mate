@@ -32,9 +32,11 @@ namespace StudyMate.Services
             var excludedIds = await ExcludedIdsAsync(studentId, cancellationToken);
             excludedIds.Add(studentId);
 
+            // University is a hard filter, not a scoring input: a cross-university pair
+            // never appears in either deck, however well their courses or schedules line up.
             var candidates = await _db.Students
                 .AsNoTracking()
-                .Where(s => !excludedIds.Contains(s.StudentId))
+                .Where(s => !excludedIds.Contains(s.StudentId) && s.University == viewer.University)
                 .Include(s => s.Enrollments).ThenInclude(e => e.Course)
                 .Include(s => s.Availability)
                 // Two collection includes in one query multiply rows together; split them

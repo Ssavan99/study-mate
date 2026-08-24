@@ -1,0 +1,15 @@
+@model Student
+@{
+    var sizeClass = (ViewData["Size"] as string) ?? "avatar-md";
+}
+
+<span class="avatar @sizeClass">
+    @if (Model.PhotoData != null)
+    {
+        <img src="@Url.Action("Photo", "Profile", new { id = Model.StudentId })" alt="" />
+    }
+    else
+    {
+        @Html.Raw(StudyMate.Services.AvatarGenerator.SvgFor(Model.StudentId, Model.Name))
+    }
+</span>

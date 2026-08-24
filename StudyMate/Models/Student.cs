@@ -19,12 +19,31 @@ namespace StudyMate.Models
         [StringLength(80)]
         public string Major { get; set; }
 
+        /// <summary>
+        /// Hard-filters matching: only students who share a university ever appear in
+        /// each other's decks. There is no catalog of real universities to validate
+        /// against, so this is free text, same as Major.
+        /// </summary>
+        [Required, StringLength(120)]
+        public string University { get; set; }
+
         /// <summary>Year of study, 1-5. 5 covers graduate students.</summary>
         [Range(1, 5)]
         public int Year { get; set; } = 1;
 
         [StringLength(280)]
         public string Bio { get; set; }
+
+        /// <summary>
+        /// Optional uploaded profile photo, capped ~1MB and content-type sniffed at
+        /// upload time. Null means "use the generated initials avatar instead."
+        /// Stored in the database rather than a file host: consistent with everything
+        /// else here resetting on restart, and needs no external service or signup.
+        /// </summary>
+        public byte[] PhotoData { get; set; }
+
+        [StringLength(50)]
+        public string PhotoContentType { get; set; }
 
         public NoiseLevel PreferredNoise { get; set; } = NoiseLevel.Quiet;
 

@@ -46,8 +46,13 @@ namespace StudyMate.Data
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             var students = new List<Student>();
-            students.AddRange(BuildPersonas(passwordHasher));
-            students.AddRange(BuildCrowd(random, passwordHasher));
+            var personas = BuildPersonas(passwordHasher);
+            var usedNames = new HashSet<string>(personas.Select(s => s.Name));
+            students.AddRange(personas);
+            // 50 at the personas' university (so the demo decks stay full), 6 at a
+            // second university that should never appear in anyone's matches there.
+            students.AddRange(BuildCrowd(random, passwordHasher, 50, PrimaryUniversity, usedNames));
+            students.AddRange(BuildCrowd(random, passwordHasher, 6, SecondaryUniversity, usedNames));
 
             db.Students.AddRange(students);
             await db.SaveChangesAsync();
@@ -108,23 +113,33 @@ namespace StudyMate.Data
         /// Their majors are the most common ones in the crowd, which guarantees each
         /// of them opens onto a populated deck rather than an empty one.
         /// </summary>
+        /// <summary>All four demo personas share this university, so their decks are never empty.</summary>
+        public const string PrimaryUniversity = "University of Nebraska";
+
+        /// <summary>
+        /// A second, smaller university seeded specifically so the same-university match
+        /// filter has something to visibly exclude — with only one university in the data,
+        /// the filter would be unverifiable in the demo even if it worked correctly.
+        /// </summary>
+        public const string SecondaryUniversity = "Iowa State University";
+
         private static List<Student> BuildPersonas(IPasswordHasher<Student> passwordHasher) => new()
         {
             NewStudent(passwordHasher, "Maya Chen", "maya.chen@example.edu", "Computer Science", 3,
                 "Third year CS, deep in algorithms. I like working through problem sets out loud with someone.",
-                NoiseLevel.Discussion, StudyPace.Steady, GroupSize.OneOnOne, isDemo: true),
+                NoiseLevel.Discussion, StudyPace.Steady, GroupSize.OneOnOne, PrimaryUniversity, isDemo: true),
 
             NewStudent(passwordHasher, "Daniel Okafor", "daniel.okafor@example.edu", "Mathematics", 2,
                 "Maths major who mostly needs someone to sit with in the library and stay off my phone.",
-                NoiseLevel.Silent, StudyPace.Steady, GroupSize.OneOnOne, isDemo: true),
+                NoiseLevel.Silent, StudyPace.Steady, GroupSize.OneOnOne, PrimaryUniversity, isDemo: true),
 
             NewStudent(passwordHasher, "Priya Raman", "priya.raman@example.edu", "Computer Science", 4,
                 "Final year, juggling a capstone. Realistically I study in bursts before deadlines.",
-                NoiseLevel.Quiet, StudyPace.Crammer, GroupSize.SmallGroup, isDemo: true),
+                NoiseLevel.Quiet, StudyPace.Crammer, GroupSize.SmallGroup, PrimaryUniversity, isDemo: true),
 
             NewStudent(passwordHasher, "Sofia Duarte", "sofia.duarte@example.edu", "Biology", 2,
                 "Pre-med, so a lot of memorisation. Happy to quiz people if they quiz me back.",
-                NoiseLevel.Quiet, StudyPace.Mixed, GroupSize.Either, isDemo: true)
+                NoiseLevel.Quiet, StudyPace.Mixed, GroupSize.Either, PrimaryUniversity, isDemo: true)
         };
 
         // --- the surrounding crowd -------------------------------------------
@@ -183,12 +198,16 @@ namespace StudyMate.Data
             ""
         };
 
-        private static List<Student> BuildCrowd(Random random, IPasswordHasher<Student> passwordHasher)
+        private static List<Student> BuildCrowd(
+            Random random,
+            IPasswordHasher<Student> passwordHasher,
+            int count,
+            string university,
+            HashSet<string> usedNames)
         {
             var students = new List<Student>();
-            var usedNames = new HashSet<string>();
 
-            while (students.Count < 56)
+            while (students.Count < count)
             {
                 var name = $"{Pick(random, FirstNames)} {Pick(random, LastNames)}";
                 if (!usedNames.Add(name))
@@ -209,6 +228,7 @@ namespace StudyMate.Data
                     (NoiseLevel)random.Next(0, 3),
                     (StudyPace)random.Next(0, 3),
                     (GroupSize)random.Next(0, 3),
+                    university,
                     isDemo: false));
             }
 
@@ -225,6 +245,7 @@ namespace StudyMate.Data
             NoiseLevel noise,
             StudyPace pace,
             GroupSize group,
+            string university,
             bool isDemo)
         {
             var student = new Student
@@ -232,6 +253,7 @@ namespace StudyMate.Data
                 Name = name,
                 Email = email.ToLowerInvariant(),
                 Major = major,
+                University = university,
                 Year = year,
                 Bio = bio,
                 PreferredNoise = noise,
@@ -336,11 +358,16 @@ namespace StudyMate.Data
         private static async Task SeedRequestsAsync(AppDbContext db, List<Student> students, Random random)
         {
             var personas = students.Where(s => s.IsDemo).ToList();
-            var others = students.Where(s => !s.IsDemo).ToList();
             var used = new HashSet<(int, int)>();
 
             foreach (var persona in personas)
             {
+                // Same university only — a real request could never exist otherwise,
+                // since the deck it would have come from is already filtered that way.
+                var others = students
+                    .Where(s => !s.IsDemo && s.University == persona.University)
+                    .ToList();
+
                 // Two people waiting on the persona's answer.
                 foreach (var sender in others.OrderBy(_ => random.Next()).Take(2))
                 {

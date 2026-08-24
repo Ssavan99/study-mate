@@ -8,13 +8,16 @@ namespace StudyMate.Tests
         public static Course Course(int id, string code) =>
             new() { CourseId = id, Code = code, Title = $"Course {code}", Department = code.Split(' ')[0] };
 
+        public const string DefaultUniversity = "Test University";
+
         public static Student Student(
             int id,
             string name = "Test Student",
             string major = "Computer Science",
             NoiseLevel noise = NoiseLevel.Quiet,
             StudyPace pace = StudyPace.Mixed,
-            GroupSize group = GroupSize.Either) =>
+            GroupSize group = GroupSize.Either,
+            string university = DefaultUniversity) =>
             new()
             {
                 StudentId = id,
@@ -22,6 +25,7 @@ namespace StudyMate.Tests
                 Email = $"student{id}@example.edu",
                 PasswordHash = "not-a-real-hash",
                 Major = major,
+                University = university,
                 Year = 2,
                 PreferredNoise = noise,
                 Pace = pace,

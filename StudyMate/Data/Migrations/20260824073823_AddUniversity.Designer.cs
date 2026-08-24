@@ -11,8 +11,8 @@ using StudyMate.Data;
 namespace StudyMate.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260822055242_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260824073823_AddUniversity")]
+    partial class AddUniversity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -144,6 +144,12 @@ namespace StudyMate.Data.Migrations
 
                     b.Property<int>("PreferredNoise")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("University")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
 
                     b.Property<int>("Year")
                         .HasColumnType("INTEGER");

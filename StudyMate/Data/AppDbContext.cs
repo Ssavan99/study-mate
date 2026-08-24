@@ -29,6 +29,13 @@ namespace StudyMate.Data
                 .HasIndex(s => s.Email)
                 .IsUnique();
 
+            // University is a hard match filter compared with ==, so it needs the same
+            // case-insensitive collation as Email — otherwise "UNL" and "unl" would
+            // silently never match each other.
+            modelBuilder.Entity<Student>()
+                .Property(s => s.University)
+                .UseCollation("NOCASE");
+
             modelBuilder.Entity<Course>()
                 .HasIndex(c => c.Code)
                 .IsUnique();

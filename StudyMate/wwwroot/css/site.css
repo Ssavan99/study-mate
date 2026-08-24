@@ -1,13 +1,36 @@
 :root {
-    --ink: #1d2433;
-    --ink-soft: #5a6478;
-    --line: #e3e7ee;
+    /* Coral & Peach — warm, connection-coded, no dark colors.
+       Contrast verified (WCAG AA, 4.5:1) rather than assumed:
+       --ink on --canvas/--surface: 9.1:1 / 8.7:1
+       --ink-soft on --surface/--canvas: 5.1:1 / 4.9:1
+       --primary-dark + white text: 4.7:1  (--primary itself is 2.7:1 — decorative fills only)
+       --accent-dark + white text: 5.5:1   (--accent itself is 3.7:1 — decorative fills only) */
+    --ink: #7c2d3b;
+    --ink-soft: #9d5a64;
+    --line: #fbd9c9;
     --surface: #ffffff;
-    --canvas: #f6f7fa;
-    --accent: #3d5afe;
-    --accent-dark: #2c3fc4;
-    --accent-wash: #eef1ff;
+    --canvas: #fff8f3;
+
+    --primary: #fb7185;
+    --primary-dark: #e11d48;
+    --primary-wash: #ffe4e9;
+
+    --secondary: #fdba74;
+    --secondary-wash: #ffedd8;
+
+    --accent: #0d9488;
+    --accent-dark: #0f766e;
+    --accent-wash: #ccfbf1;
+
     --positive: #1f8a5a;
+    --positive-wash: #e4f5ec;
+
+    /* Match tiers — deliberately only two: everything below Strong shows no
+       badge at all rather than a neutral or negative label. */
+    --tier-great-bg: var(--primary-dark);
+    --tier-great-fg: #ffffff;
+    --tier-strong-bg: var(--secondary);
+    --tier-strong-fg: var(--ink);
 }
 
 html {
@@ -20,11 +43,12 @@ body {
     margin-bottom: 60px;
     background-color: var(--canvas);
     color: var(--ink);
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
 }
 
 a {
-    color: var(--accent);
+    color: var(--primary-dark);
 }
 
 a:hover {
@@ -42,9 +66,17 @@ a:hover {
 }
 
 .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--ink) !important;
+}
+
+.navbar-brand img {
+    height: 28px;
+    width: 28px;
 }
 
 .navbar .nav-link {
@@ -84,13 +116,49 @@ a:hover {
     border-top: 1px solid var(--line) !important;
 }
 
+/* Primary actions use the teal accent, not the coral brand color — keeps
+   "this is our brand" (coral) visually distinct from "click this" (teal). */
 .btn-primary {
-    background-color: var(--accent);
-    border-color: var(--accent);
+    background-color: var(--accent-dark);
+    border-color: var(--accent-dark);
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
+    background-color: #0b5f59;
+    border-color: #0b5f59;
+}
+
+.btn-outline-secondary {
+    color: var(--ink-soft);
+    border-color: var(--line);
+}
+
+.btn-outline-secondary:hover {
+    color: var(--ink);
+    background-color: var(--canvas);
+    border-color: var(--line);
+}
+
+/* Bootstrap's link/outline-primary buttons carry their own hardcoded blue
+   independent of the `a` rule above; override every variant so nothing on
+   the page falls back to default Bootstrap blue. */
+.btn-link {
+    color: var(--primary-dark);
+}
+
+.btn-link:hover {
+    color: var(--accent-dark);
+}
+
+.btn-outline-primary {
+    color: var(--accent-dark);
+    border-color: var(--accent-dark);
+}
+
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    color: #ffffff;
     background-color: var(--accent-dark);
     border-color: var(--accent-dark);
 }
@@ -98,6 +166,15 @@ a:hover {
 .btn:focus,
 .form-control:focus {
     box-shadow: 0 0 0 3px var(--accent-wash);
+}
+
+.btn {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.card {
+    border-radius: 14px;
 }
 
 /* --- landing ----------------------------------------------------------- */
@@ -117,22 +194,25 @@ a:hover {
     margin-left: auto;
     margin-right: auto;
     font-size: 1.05rem;
+    color: var(--ink-soft);
 }
 
 .demo-panel {
     background-color: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 16px;
     padding: 1.5rem;
+    box-shadow: 0 8px 30px rgba(124, 45, 59, 0.06);
 }
 
 .persona-card {
     border-color: var(--line);
+    border-radius: 14px;
     transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .persona-card:hover {
-    box-shadow: 0 6px 18px rgba(29, 36, 51, 0.09);
+    box-shadow: 0 10px 24px rgba(124, 45, 59, 0.12);
     transform: translateY(-2px);
 }
 
@@ -155,7 +235,7 @@ a:hover {
     height: 44px;
     background-color: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 16px;
     transform: translateX(-50%);
 }
 
@@ -174,8 +254,8 @@ a:hover {
 .match-card {
     position: relative;
     border-color: var(--line);
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(29, 36, 51, 0.07);
+    border-radius: 16px;
+    box-shadow: 0 10px 32px rgba(124, 45, 59, 0.1);
 }
 
 .match-card .card-body {
@@ -183,8 +263,10 @@ a:hover {
 }
 
 .match-card .card-footer {
+    background-color: var(--surface);
     border-top: 1px solid var(--line);
     padding: 1rem 1.5rem;
+    border-radius: 0 0 16px 16px;
 }
 
 .bio {
@@ -193,52 +275,44 @@ a:hover {
     margin-bottom: 1.25rem;
 }
 
-.score {
-    text-align: right;
-    line-height: 1;
+/* A tier badge appears only for Great/Strong matches. Everything below shows
+   no badge at all — see MatchTier. There is deliberately no "low score" style. */
+.tier-badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
     white-space: nowrap;
 }
 
-.score-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--accent);
-    letter-spacing: -0.03em;
+.tier-badge-great {
+    background-color: var(--tier-great-bg);
+    color: var(--tier-great-fg);
 }
 
-.score-max {
-    font-size: 0.8rem;
-    color: var(--ink-soft);
+.tier-badge-strong {
+    background-color: var(--tier-strong-bg);
+    color: var(--tier-strong-fg);
 }
 
 .reasons-heading {
     font-size: 0.7rem;
     letter-spacing: 0.08em;
     margin-bottom: 0.6rem;
+    color: var(--ink-soft);
 }
 
 .reason {
-    display: flex;
-    align-items: baseline;
-    padding: 0.4rem 0;
+    padding: 0.5rem 0;
     border-top: 1px solid var(--line);
     font-size: 0.92rem;
+    color: var(--ink);
 }
 
 .reason:first-child {
     border-top: none;
-}
-
-.reason-points {
-    flex: 0 0 3rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--positive);
-    font-size: 0.85rem;
-}
-
-.reason-text {
-    color: var(--ink);
 }
 
 .shortcut-hint kbd {
@@ -251,7 +325,7 @@ a:hover {
 .empty-state {
     background-color: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 16px;
 }
 
 /* --- ranked list ------------------------------------------------------- */
@@ -272,26 +346,9 @@ a:hover {
     width: 3rem;
 }
 
-.score-pill {
-    display: inline-block;
-    min-width: 2.6rem;
-    text-align: center;
-    padding: 0.2rem 0.5rem;
-    border-radius: 999px;
-    background-color: var(--accent-wash);
-    color: var(--accent-dark);
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-}
-
 .reason-inline {
     color: var(--ink-soft);
     line-height: 1.5;
-}
-
-.reason-inline .reason-points {
-    display: inline;
-    margin-right: 0.25rem;
 }
 
 /* --- profile ----------------------------------------------------------- */
@@ -299,7 +356,7 @@ a:hover {
 .profile-section {
     background-color: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 16px;
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.5rem;
 }
@@ -308,6 +365,7 @@ a:hover {
     font-size: 0.72rem;
     letter-spacing: 0.08em;
     margin-bottom: 0.75rem;
+    color: var(--ink-soft);
 }
 
 .course-grid {
@@ -323,6 +381,7 @@ a:hover {
     border-bottom: 1px solid var(--line);
     padding-bottom: 0.3rem;
     margin-bottom: 0.5rem;
+    color: var(--ink-soft);
 }
 
 .course-group .custom-control {
@@ -338,6 +397,56 @@ a:hover {
     width: 1.1rem;
     height: 1.1rem;
     cursor: pointer;
+    accent-color: var(--accent-dark);
+}
+
+/* Bootstrap 4's custom checkboxes hardcode its own blue for the checked state;
+   override with the theme so every control on the page reads as one system. */
+.custom-control-input:checked ~ .custom-control-label::before {
+    background-color: var(--accent-dark);
+    border-color: var(--accent-dark);
+}
+
+.custom-control-input:focus ~ .custom-control-label::before {
+    box-shadow: 0 0 0 3px var(--accent-wash);
+}
+
+.custom-control-input:active ~ .custom-control-label::before {
+    background-color: var(--accent-wash);
+    border-color: var(--accent-dark);
+}
+
+/* Deterministic silhouette avatar (default) or an uploaded photo, wherever a
+   student is shown: deck, ranked list, requests, nav. */
+.avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background-color: var(--secondary-wash);
+}
+
+.avatar img,
+.avatar svg {
+    width: 100%;
+    height: 100%;
+}
+
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+}
+
+.avatar-md {
+    width: 48px;
+    height: 48px;
+}
+
+.avatar-lg {
+    width: 72px;
+    height: 72px;
 }
 
 /* --- requests ---------------------------------------------------------- */
@@ -345,7 +454,7 @@ a:hover {
 .request-list {
     background-color: var(--surface);
     border: 1px solid var(--line);
-    border-radius: 10px;
+    border-radius: 16px;
     overflow: hidden;
 }
 
@@ -368,12 +477,12 @@ a:hover {
 }
 
 .status-pending {
-    background-color: #fff5e0;
+    background-color: var(--secondary-wash);
     color: #8a5a00;
 }
 
 .status-accepted {
-    background-color: #e4f5ec;
+    background-color: var(--positive-wash);
     color: var(--positive);
 }
 
@@ -392,10 +501,6 @@ a:hover {
     .match-card .card-body,
     .match-card .card-footer {
         padding: 1.15rem;
-    }
-
-    .score-value {
-        font-size: 1.6rem;
     }
 
     .shortcut-hint {

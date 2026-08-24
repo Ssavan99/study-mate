@@ -11,6 +11,9 @@ namespace StudyMate.Models.ViewModels
         [Required, StringLength(80)]
         public string Major { get; set; }
 
+        [Required, StringLength(120)]
+        public string University { get; set; }
+
         [Range(1, 5)]
         public int Year { get; set; } = 1;
 
@@ -35,6 +38,9 @@ namespace StudyMate.Models.ViewModels
 
         /// <summary>Populated by the controller for rendering; not posted back.</summary>
         public List<Course> AllCourses { get; set; } = new();
+
+        /// <summary>Populated by the controller so the view can render the avatar; not posted back.</summary>
+        public Student CurrentStudent { get; set; }
 
         public static string SlotKey(DayOfWeek day, TimeBlock block) => $"{(int)day}-{(int)block}";
 
