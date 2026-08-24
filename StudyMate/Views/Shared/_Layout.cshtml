@@ -4,6 +4,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - StudyMate</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/logo-mark.svg" />
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
@@ -11,7 +16,10 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom mb-4">
             <div class="container">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">StudyMate</a>
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    <img src="~/img/logo-mark.svg" alt="" width="28" height="28" />
+                    StudyMate
+                </a>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNav"
                         aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>

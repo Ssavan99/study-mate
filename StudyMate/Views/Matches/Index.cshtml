@@ -49,10 +49,14 @@ else
                             @current.Candidate.Major · Year @current.Candidate.Year
                         </p>
                     </div>
-                    <div class="score" title="Match score out of 100">
-                        <span class="score-value">@current.Score</span>
-                        <span class="score-max">/100</span>
-                    </div>
+                    @if (current.Tier == MatchTier.Great)
+                    {
+                        <span class="tier-badge tier-badge-great">Great Match</span>
+                    }
+                    else if (current.Tier == MatchTier.Strong)
+                    {
+                        <span class="tier-badge tier-badge-strong">Strong Match</span>
+                    }
                 </div>
 
                 @if (!string.IsNullOrWhiteSpace(current.Candidate.Bio))
@@ -64,10 +68,7 @@ else
                 <ul class="reasons list-unstyled mb-0">
                     @foreach (var reason in current.Reasons)
                     {
-                        <li class="reason">
-                            <span class="reason-points">+@reason.Points</span>
-                            <span class="reason-text">@reason.Text</span>
-                        </li>
+                        <li class="reason">@reason.Text</li>
                     }
                     @if (!current.Reasons.Any())
                     {

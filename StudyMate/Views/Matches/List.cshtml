@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
         <h1 class="h4 mb-0">All matches</h1>
-        <span class="text-muted small">Ranked by score, best first</span>
+        <span class="text-muted small">Best matches first</span>
     </div>
     <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back to the deck</a>
 </div>
@@ -23,7 +23,7 @@ else
                 <tr>
                     <th scope="col" class="rank-col">#</th>
                     <th scope="col">Student</th>
-                    <th scope="col">Score</th>
+                    <th scope="col">Match</th>
                     <th scope="col">Why</th>
                     <th scope="col"></th>
                 </tr>
@@ -39,14 +39,19 @@ else
                             <span class="text-muted small">@match.Candidate.Major · Year @match.Candidate.Year</span>
                         </td>
                         <td>
-                            <span class="score-pill">@match.Score</span>
+                            @if (match.Tier == MatchTier.Great)
+                            {
+                                <span class="tier-badge tier-badge-great">Great Match</span>
+                            }
+                            else if (match.Tier == MatchTier.Strong)
+                            {
+                                <span class="tier-badge tier-badge-strong">Strong Match</span>
+                            }
                         </td>
                         <td class="small">
                             @foreach (var reason in match.Reasons)
                             {
-                                <div class="reason-inline">
-                                    <span class="reason-points">+@reason.Points</span> @reason.Text
-                                </div>
+                                <div class="reason-inline">@reason.Text</div>
                             }
                             @if (!match.Reasons.Any())
                             {

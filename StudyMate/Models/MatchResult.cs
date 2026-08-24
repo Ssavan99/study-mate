@@ -5,8 +5,13 @@ namespace StudyMate.Models
     {
         public Student Candidate { get; init; }
 
-        /// <summary>Total score, 0-100.</summary>
+        /// <summary>
+        /// Total score, 0-100. Drives ranking only — never rendered directly.
+        /// The interface shows <see cref="Tier"/> instead.
+        /// </summary>
         public int Score { get; init; }
+
+        public MatchTier Tier => Score.ToTier();
 
         public IReadOnlyList<MatchReason> Reasons { get; init; } = new List<MatchReason>();
 
