@@ -36,7 +36,12 @@ ordering itself is visible:
 ## How the matching works
 
 Two students are only ever compared if they share a **university** — that filter runs
-before anything else and cannot be outweighed by any amount of course overlap.
+before anything else and cannot be outweighed by any amount of course overlap. A course
+only counts toward a match when **both** students have switched it on: your schedule is
+every course you're taking, but matching uses only the ones you've flagged as wanting a
+partner for. Sitting in the same lecture as someone who isn't looking for company is not
+a match signal.
+
 Within that pool, `MatchScorer` compares students across four dimensions. The
 weighting reflects what makes a study partnership work in practice: being in the same
 course matters far more than having a similar personality, and being free at the same
@@ -100,11 +105,17 @@ docker build -t studymate . && docker run -p 10000:10000 studymate
 
 ## The rest of the app
 
-Profiles drive the matching, so course selection and a weekly availability grid are
-the substance of the profile page. The fixed course list doesn't cover everything, so
-a student can add one as free text — there's no free catalog API to check it's real
-against, so it's validated as a department code plus a number and reused if someone
-else already added the same course, rather than fragmenting into near-duplicates.
+Profiles drive the matching, so the schedule and a weekly availability grid are the
+substance of the profile page. Courses belong to a university — different schools
+genuinely use different abbreviations and numbering, so "CSCE 155" at one school and
+"CS 227" at another are separate courses, and you only ever see your own school's
+catalog. You add courses through a department → course pair of dropdowns, with a
+free-text fallback for anything not yet listed (validated as a department code plus a
+number, and reused if someone else already added it rather than fragmenting into
+near-duplicates).
+
+Each course on your schedule has its own switch for whether you actually want a study
+partner in it.
 
 A profile picture is optional; anyone who hasn't set one gets a deterministic
 initials-on-color avatar instead, the same pattern GitHub and Slack use for a default:

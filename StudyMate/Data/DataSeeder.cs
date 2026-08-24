@@ -41,8 +41,10 @@ namespace StudyMate.Data
             db.Courses.AddRange(courses);
             await db.SaveChangesAsync();
 
-            var coursesByDepartment = courses
-                .GroupBy(c => c.Department)
+            // Courses are scoped per university, so each school's catalog is indexed
+            // separately — a student can only ever be offered courses at their own school.
+            var coursesByUniversity = courses
+                .GroupBy(c => c.University)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             var students = new List<Student>();
@@ -59,7 +61,7 @@ namespace StudyMate.Data
 
             foreach (var student in students)
             {
-                AssignCourses(db, student, coursesByDepartment, courses, random);
+                AssignCourses(db, student, coursesByUniversity[student.University], random);
                 AssignAvailability(db, student, random);
             }
 
@@ -71,39 +73,81 @@ namespace StudyMate.Data
 
         // --- courses --------------------------------------------------------
 
-        private static List<Course> BuildCourses() => new()
+        /// <summary>
+        /// Two catalogs with deliberately different department abbreviations and number
+        /// ranges — the same subject is "CSCE 155" at one school and "CS 227" at the other.
+        /// That difference is the whole reason courses are scoped per university rather
+        /// than pooled globally.
+        /// </summary>
+        private static List<Course> BuildCourses()
         {
-            new Course { Code = "CSCE 155", Title = "Computer Science I", Department = "Computer Science" },
-            new Course { Code = "CSCE 156", Title = "Computer Science II", Department = "Computer Science" },
-            new Course { Code = "CSCE 235", Title = "Discrete Mathematics", Department = "Computer Science" },
-            new Course { Code = "CSCE 310", Title = "Data Structures and Algorithms", Department = "Computer Science" },
-            new Course { Code = "CSCE 361", Title = "Software Engineering", Department = "Computer Science" },
-            new Course { Code = "CSCE 411", Title = "Operating Systems", Department = "Computer Science" },
-            new Course { Code = "CSCE 478", Title = "Machine Learning", Department = "Computer Science" },
+            var nebraska = new (string Code, string Title)[]
+            {
+                ("CSCE 155", "Computer Science I"),
+                ("CSCE 156", "Computer Science II"),
+                ("CSCE 235", "Discrete Mathematics"),
+                ("CSCE 310", "Data Structures and Algorithms"),
+                ("CSCE 361", "Software Engineering"),
+                ("CSCE 411", "Operating Systems"),
+                ("CSCE 478", "Machine Learning"),
+                ("MATH 106", "Calculus I"),
+                ("MATH 107", "Calculus II"),
+                ("MATH 208", "Calculus III"),
+                ("MATH 314", "Linear Algebra"),
+                ("MATH 380", "Statistics and Probability"),
+                ("PHYS 211", "General Physics I"),
+                ("PHYS 212", "General Physics II"),
+                ("PHYS 361", "Classical Mechanics"),
+                ("BIOL 101", "General Biology"),
+                ("BIOL 206", "Genetics"),
+                ("BIOL 312", "Cell Biology"),
+                ("CHEM 109", "General Chemistry"),
+                ("CHEM 251", "Organic Chemistry"),
+                ("ECON 211", "Microeconomics"),
+                ("ECON 212", "Macroeconomics"),
+                ("ECON 417", "Econometrics"),
+                ("PSYC 181", "Introduction to Psychology"),
+                ("PSYC 350", "Research Methods")
+            };
 
-            new Course { Code = "MATH 106", Title = "Calculus I", Department = "Mathematics" },
-            new Course { Code = "MATH 107", Title = "Calculus II", Department = "Mathematics" },
-            new Course { Code = "MATH 208", Title = "Calculus III", Department = "Mathematics" },
-            new Course { Code = "MATH 314", Title = "Linear Algebra", Department = "Mathematics" },
-            new Course { Code = "MATH 380", Title = "Statistics and Probability", Department = "Mathematics" },
+            var iowa = new (string Code, string Title)[]
+            {
+                ("CS 227", "Introduction to Programming"),
+                ("CS 228", "Data Structures"),
+                ("CS 311", "Design of Algorithms"),
+                ("CS 363", "Database Systems"),
+                ("MATH 165", "Calculus I"),
+                ("MATH 166", "Calculus II"),
+                ("MATH 207", "Matrices and Linear Algebra"),
+                ("STAT 231", "Probability and Statistics"),
+                ("PHYS 221", "Introduction to Classical Physics"),
+                ("BIOL 211", "Principles of Biology"),
+                ("CHEM 177", "General Chemistry I"),
+                ("ECON 101", "Principles of Microeconomics"),
+                ("PSYCH 101", "Introduction to Psychology")
+            };
 
-            new Course { Code = "PHYS 211", Title = "General Physics I", Department = "Physics" },
-            new Course { Code = "PHYS 212", Title = "General Physics II", Department = "Physics" },
-            new Course { Code = "PHYS 361", Title = "Classical Mechanics", Department = "Physics" },
+            var courses = new List<Course>();
 
-            new Course { Code = "BIOL 101", Title = "General Biology", Department = "Biology" },
-            new Course { Code = "BIOL 206", Title = "Genetics", Department = "Biology" },
-            new Course { Code = "BIOL 312", Title = "Cell Biology", Department = "Biology" },
+            foreach (var (code, title) in nebraska)
+            {
+                courses.Add(NewCourse(code, title, PrimaryUniversity));
+            }
 
-            new Course { Code = "CHEM 109", Title = "General Chemistry", Department = "Chemistry" },
-            new Course { Code = "CHEM 251", Title = "Organic Chemistry", Department = "Chemistry" },
+            foreach (var (code, title) in iowa)
+            {
+                courses.Add(NewCourse(code, title, SecondaryUniversity));
+            }
 
-            new Course { Code = "ECON 211", Title = "Microeconomics", Department = "Economics" },
-            new Course { Code = "ECON 212", Title = "Macroeconomics", Department = "Economics" },
-            new Course { Code = "ECON 417", Title = "Econometrics", Department = "Economics" },
+            return courses;
+        }
 
-            new Course { Code = "PSYC 181", Title = "Introduction to Psychology", Department = "Psychology" },
-            new Course { Code = "PSYC 350", Title = "Research Methods", Department = "Psychology" }
+        private static Course NewCourse(string code, string title, string university) => new()
+        {
+            Code = code,
+            Title = title,
+            Department = code.Split(' ')[0],
+            University = university
         };
 
         // --- the four demo personas ------------------------------------------
@@ -277,17 +321,29 @@ namespace StudyMate.Data
         /// A purely random spread across 25 courses would leave almost nobody with an overlap,
         /// and the matching would look broken rather than selective.
         /// </summary>
+        /// <summary>Major to the department abbreviations that teach it, per catalog.</summary>
+        private static readonly Dictionary<string, string[]> MajorDepartments = new()
+        {
+            ["Computer Science"] = new[] { "CSCE", "CS" },
+            ["Mathematics"] = new[] { "MATH", "STAT" },
+            ["Physics"] = new[] { "PHYS" },
+            ["Biology"] = new[] { "BIOL" },
+            ["Chemistry"] = new[] { "CHEM" },
+            ["Economics"] = new[] { "ECON" },
+            ["Psychology"] = new[] { "PSYC", "PSYCH" }
+        };
+
         private static void AssignCourses(
             AppDbContext db,
             Student student,
-            IReadOnlyDictionary<string, List<Course>> coursesByDepartment,
-            List<Course> allCourses,
+            List<Course> universityCourses,
             Random random)
         {
             var chosen = new HashSet<int>();
 
-            if (coursesByDepartment.TryGetValue(student.Major, out var home))
+            if (MajorDepartments.TryGetValue(student.Major, out var departments))
             {
+                var home = universityCourses.Where(c => departments.Contains(c.Department)).ToList();
                 foreach (var course in home.OrderBy(_ => random.Next()).Take(random.Next(2, 4)))
                 {
                     chosen.Add(course.CourseId);
@@ -295,14 +351,22 @@ namespace StudyMate.Data
             }
 
             var electives = random.Next(1, 3);
-            foreach (var course in allCourses.OrderBy(_ => random.Next()).Take(electives))
+            foreach (var course in universityCourses.OrderBy(_ => random.Next()).Take(electives))
             {
                 chosen.Add(course.CourseId);
             }
 
             foreach (var courseId in chosen)
             {
-                db.Enrollments.Add(new Enrollment { StudentId = student.StudentId, CourseId = courseId });
+                // Most enrolments are open to a partner, but not all — a schedule where
+                // every single course is flagged would make the toggle look decorative
+                // instead of demonstrating that it actually gates matching.
+                db.Enrollments.Add(new Enrollment
+                {
+                    StudentId = student.StudentId,
+                    CourseId = courseId,
+                    SeekingPartner = random.NextDouble() < 0.78
+                });
             }
         }
 

@@ -25,7 +25,7 @@ namespace StudyMate.Controllers
             if (studentId == null) return Forbid();
 
             var student = await _db.Students
-                .Include(s => s.Enrollments)
+                .Include(s => s.Enrollments).ThenInclude(e => e.Course)
                 .Include(s => s.Availability)
                 .FirstOrDefaultAsync(s => s.StudentId == studentId.Value);
 
@@ -42,13 +42,13 @@ namespace StudyMate.Controllers
                 PreferredNoise = student.PreferredNoise,
                 Pace = student.Pace,
                 PreferredGroupSize = student.PreferredGroupSize,
-                SelectedCourseIds = student.Enrollments.Select(e => e.CourseId).ToList(),
+                SeekingCourseIds = student.Enrollments.Where(e => e.SeekingPartner).Select(e => e.CourseId).ToList(),
                 SelectedSlots = student.Availability
                     .Select(a => ProfileEditViewModel.SlotKey(a.Day, a.Block))
                     .ToList()
             };
 
-            await PopulateCoursesAsync(model);
+            await PopulateCoursesAsync(model, student);
             return View(model);
         }
 
@@ -59,20 +59,19 @@ namespace StudyMate.Controllers
             var studentId = User.GetStudentId();
             if (studentId == null) return Forbid();
 
-            if (!ModelState.IsValid)
-            {
-                await PopulateCoursesAsync(model);
-                model.CurrentStudent = await _db.Students.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.StudentId == studentId.Value);
-                return View(model);
-            }
-
             var student = await _db.Students
-                .Include(s => s.Enrollments)
+                .Include(s => s.Enrollments).ThenInclude(e => e.Course)
                 .Include(s => s.Availability)
                 .FirstOrDefaultAsync(s => s.StudentId == studentId.Value);
 
             if (student == null) return NotFound();
+
+            if (!ModelState.IsValid)
+            {
+                model.CurrentStudent = student;
+                await PopulateCoursesAsync(model, student);
+                return View(model);
+            }
 
             student.Name = model.Name.Trim();
             student.Major = model.Major.Trim();
@@ -83,27 +82,12 @@ namespace StudyMate.Controllers
             student.Pace = model.Pace;
             student.PreferredGroupSize = model.PreferredGroupSize;
 
-            // Only course ids that actually exist are accepted, so a tampered form
-            // cannot create enrolments against unknown courses.
-            var desiredCourseIds = (await _db.Courses
-                    .Where(c => model.SelectedCourseIds.Contains(c.CourseId))
-                    .Select(c => c.CourseId)
-                    .ToListAsync())
-                .ToHashSet();
-
-            // These collections are diffed rather than cleared and rebuilt. Both entities
-            // have composite keys, so re-adding a row that is still in the change tracker
-            // as Deleted collides on its key and SaveChanges throws. Diffing also avoids
-            // rewriting every row on a save that changed nothing.
-            foreach (var removed in student.Enrollments.Where(e => !desiredCourseIds.Contains(e.CourseId)).ToList())
+            // Enrolment membership is managed by AddCourse/RemoveCourse; this form only
+            // decides which of the already-enrolled courses are open to a partner.
+            var seeking = model.SeekingCourseIds.ToHashSet();
+            foreach (var enrollment in student.Enrollments)
             {
-                student.Enrollments.Remove(removed);
-            }
-
-            var existingCourseIds = student.Enrollments.Select(e => e.CourseId).ToHashSet();
-            foreach (var courseId in desiredCourseIds.Except(existingCourseIds))
-            {
-                student.Enrollments.Add(new Enrollment { StudentId = student.StudentId, CourseId = courseId });
+                enrollment.SeekingPartner = seeking.Contains(enrollment.CourseId);
             }
 
             var desiredSlots = new HashSet<(DayOfWeek Day, TimeBlock Block)>();
@@ -115,6 +99,8 @@ namespace StudyMate.Controllers
                 }
             }
 
+            // Diffed rather than cleared and rebuilt: AvailabilitySlot has a composite key,
+            // so re-adding a row still tracked as Deleted collides on that key.
             foreach (var removed in student.Availability.Where(a => !desiredSlots.Contains((a.Day, a.Block))).ToList())
             {
                 student.Availability.Remove(removed);
@@ -137,20 +123,11 @@ namespace StudyMate.Controllers
             return RedirectToAction(nameof(Edit));
         }
 
-        private async Task PopulateCoursesAsync(ProfileEditViewModel model)
-        {
-            model.AllCourses = await _db.Courses
-                .OrderBy(c => c.Department)
-                .ThenBy(c => c.Code)
-                .ToListAsync();
-        }
-
         /// <summary>
-        /// Adds a course the fixed list doesn't cover. There is no free API to check a
-        /// course code against a real catalog, so this can only validate the shape
-        /// (department letters + a number) and reuse an existing row when the normalized
-        /// code already exists, rather than letting the course list fragment into
-        /// near-duplicates ("CSCE310" vs "CSCE 310" vs "csce 310").
+        /// Adds a course to the student's schedule. Both the picker and the free-text
+        /// fallback land here. Courses are scoped to the student's own university, so an
+        /// existing course at that school is joined rather than duplicated, and a new one
+        /// is only ever created within that school's catalog.
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -159,6 +136,15 @@ namespace StudyMate.Controllers
             var studentId = User.GetStudentId();
             if (studentId == null) return Forbid();
 
+            var student = await _db.Students.FirstOrDefaultAsync(s => s.StudentId == studentId.Value);
+            if (student == null) return NotFound();
+
+            if (string.IsNullOrWhiteSpace(student.University))
+            {
+                TempData["CourseError"] = "Set your university before adding courses.";
+                return RedirectToAction(nameof(Edit));
+            }
+
             var normalizedCode = CourseCodeParser.Normalize(code);
             if (normalizedCode == null)
             {
@@ -166,20 +152,23 @@ namespace StudyMate.Controllers
                 return RedirectToAction(nameof(Edit));
             }
 
-            if (string.IsNullOrWhiteSpace(title))
-            {
-                TempData["CourseError"] = "Give the course a title.";
-                return RedirectToAction(nameof(Edit));
-            }
+            var course = await _db.Courses
+                .FirstOrDefaultAsync(c => c.University == student.University && c.Code == normalizedCode);
 
-            var course = await _db.Courses.FirstOrDefaultAsync(c => c.Code == normalizedCode);
             if (course == null)
             {
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    TempData["CourseError"] = $"{normalizedCode} isn't in your university's list yet — add a title to create it.";
+                    return RedirectToAction(nameof(Edit));
+                }
+
                 course = new Course
                 {
                     Code = normalizedCode,
                     Title = title.Trim(),
-                    Department = normalizedCode.Split(' ')[0]
+                    Department = normalizedCode.Split(' ')[0],
+                    University = student.University
                 };
                 _db.Courses.Add(course);
                 await _db.SaveChangesAsync();
@@ -188,14 +177,66 @@ namespace StudyMate.Controllers
             var alreadyEnrolled = await _db.Enrollments
                 .AnyAsync(e => e.StudentId == studentId.Value && e.CourseId == course.CourseId);
 
-            if (!alreadyEnrolled)
+            if (alreadyEnrolled)
             {
-                _db.Enrollments.Add(new Enrollment { StudentId = studentId.Value, CourseId = course.CourseId });
+                TempData["CourseError"] = $"{course.Code} is already on your schedule.";
+                return RedirectToAction(nameof(Edit));
+            }
+
+            _db.Enrollments.Add(new Enrollment
+            {
+                StudentId = studentId.Value,
+                CourseId = course.CourseId,
+                SeekingPartner = true
+            });
+            await _db.SaveChangesAsync();
+
+            TempData["Saved"] = $"Added {course.Code} to your schedule.";
+            return RedirectToAction(nameof(Edit));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveCourse(int courseId)
+        {
+            var studentId = User.GetStudentId();
+            if (studentId == null) return Forbid();
+
+            var enrollment = await _db.Enrollments
+                .FirstOrDefaultAsync(e => e.StudentId == studentId.Value && e.CourseId == courseId);
+
+            if (enrollment != null)
+            {
+                _db.Enrollments.Remove(enrollment);
                 await _db.SaveChangesAsync();
             }
 
-            TempData["Saved"] = $"Added {course.Code}.";
             return RedirectToAction(nameof(Edit));
+        }
+
+        private async Task PopulateCoursesAsync(ProfileEditViewModel model, Student student)
+        {
+            model.MyCourses = student.Enrollments
+                .Where(e => e.Course != null)
+                .Select(e => new EnrolledCourseView
+                {
+                    CourseId = e.CourseId,
+                    Code = e.Course.Code,
+                    Title = e.Course.Title,
+                    Department = e.Course.Department,
+                    SeekingPartner = e.SeekingPartner
+                })
+                .OrderBy(c => c.Code, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            model.UniversityCourses = string.IsNullOrWhiteSpace(student.University)
+                ? new List<Course>()
+                : await _db.Courses
+                    .AsNoTracking()
+                    .Where(c => c.University == student.University)
+                    .OrderBy(c => c.Department)
+                    .ThenBy(c => c.Code)
+                    .ToListAsync();
         }
 
         private const int MaxPhotoBytes = 1024 * 1024;

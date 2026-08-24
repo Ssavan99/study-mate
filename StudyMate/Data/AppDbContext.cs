@@ -36,8 +36,14 @@ namespace StudyMate.Data
                 .Property(s => s.University)
                 .UseCollation("NOCASE");
 
+            // Uniqueness is per university, not global: two schools can legitimately
+            // both have a "CSCE 310" and they are different courses.
             modelBuilder.Entity<Course>()
-                .HasIndex(c => c.Code)
+                .Property(c => c.University)
+                .UseCollation("NOCASE");
+
+            modelBuilder.Entity<Course>()
+                .HasIndex(c => new { c.University, c.Code })
                 .IsUnique();
 
             modelBuilder.Entity<Enrollment>()

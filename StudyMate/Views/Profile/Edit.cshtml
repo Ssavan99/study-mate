@@ -4,12 +4,17 @@
     var days = new[] { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday };
     var blocks = new[] { TimeBlock.Morning, TimeBlock.Afternoon, TimeBlock.Evening };
     var selected = Model.SelectedSlots.ToHashSet();
+    var departments = Model.UniversityCourses
+        .Select(c => c.Department)
+        .Distinct()
+        .OrderBy(d => d)
+        .ToList();
 }
 
-<h1 class="h4 mb-1">Your profile</h1>
-<p class="text-muted small mb-4">
-    Courses and availability drive your matches — the more accurate these are, the better the ranking.
-</p>
+<div class="mb-4">
+    <h1 class="page-title">Your profile</h1>
+    <p class="page-subtitle">Your courses and availability decide who you match with.</p>
+</div>
 
 @if (TempData["Saved"] != null)
 {
@@ -24,17 +29,15 @@
     <div class="alert alert-danger py-2 small">@TempData["CourseError"]</div>
 }
 
-@* The "add a class" fields render inside the main profile form below, but a form
-   cannot be nested inside another form in valid HTML. This standalone form has no
-   visible fields of its own — its inputs bind to it via the form="addCourseSubmit"
-   attribute regardless of where they sit in the document. *@
-<form id="addCourseSubmit" asp-action="AddCourse" method="post" class="d-none">
+@* Course add/remove are their own posts, so they live outside the main profile
+   form — HTML forbids nesting one form inside another. *@
+<form id="addCourseForm" asp-action="AddCourse" method="post" class="d-none">
     @Html.AntiForgeryToken()
 </form>
 
 <section class="profile-section">
-    <h2 class="h6 text-uppercase text-muted">Photo</h2>
-    <div class="d-flex align-items-center">
+    <h2>Photo</h2>
+    <div class="d-flex align-items-center flex-wrap">
         <partial name="_Avatar" model="Model.CurrentStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-lg" }' />
         <div class="ml-3">
             <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" class="form-inline">
@@ -58,11 +61,104 @@
     </div>
 </section>
 
-<form asp-action="Edit" method="post">
+<section class="profile-section">
+    <h2>Your schedule</h2>
+    <p class="text-muted small">
+        Add every course you're taking, then switch on the ones you actually want a study
+        partner for. Only courses switched on take part in matching — and only when the
+        other student has switched the same course on too.
+    </p>
+
+    @if (Model.MyCourses.Any())
+    {
+        @foreach (var course in Model.MyCourses)
+        {
+            <div class="enrolled-course @(course.SeekingPartner ? "is-seeking" : "")">
+                <div>
+                    <div class="course-code">@course.Code</div>
+                    <div class="course-title">@course.Title</div>
+                </div>
+                <div class="course-actions">
+                    <label class="seek-toggle" title="Look for a study partner in this course">
+                        <input type="checkbox" name="SeekingCourseIds" value="@course.CourseId"
+                               form="profileForm" @(course.SeekingPartner ? "checked" : "") />
+                        <span class="seek-track"></span>
+                        <span>Finding a partner</span>
+                    </label>
+                    <button type="submit" name="courseId" value="@course.CourseId"
+                            form="removeCourseForm" class="btn btn-sm btn-link text-muted p-0"
+                            title="Remove @course.Code from your schedule">Remove</button>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="course-empty">
+            <strong>No courses yet.</strong>
+            <div class="small mt-1">Add your first course below to start matching.</div>
+        </div>
+    }
+
+    <div class="course-adder mt-3">
+        <div class="form-group">
+            <label for="deptSelect">Department</label>
+            <select id="deptSelect" class="form-control">
+                <option value="">Choose…</option>
+                @foreach (var dept in departments)
+                {
+                    <option value="@dept">@dept</option>
+                }
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="numberSelect">Course</label>
+            <select id="numberSelect" class="form-control" disabled>
+                <option value="">Choose a department first</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <button type="submit" form="addCourseForm" name="code" value=""
+                    id="addExistingBtn" class="btn btn-primary" disabled>Add to schedule</button>
+        </div>
+        <div class="form-group ml-auto">
+            <button type="button" class="btn btn-sm btn-link" data-toggle="collapse" data-target="#newCourseBox">
+                Course not listed?
+            </button>
+        </div>
+    </div>
+
+    <div class="collapse mt-3" id="newCourseBox">
+        <div class="course-adder">
+            <div class="form-group">
+                <label for="newCode">New course code</label>
+                <input type="text" id="newCode" name="code" form="addCourseForm" class="form-control" placeholder="CSCE 310" />
+            </div>
+            <div class="form-group" style="flex: 1 1 16rem;">
+                <label for="newTitle">Title</label>
+                <input type="text" id="newTitle" name="title" form="addCourseForm" class="form-control" placeholder="Data Structures and Algorithms" />
+            </div>
+            <div class="form-group">
+                <button type="submit" form="addCourseForm" class="btn btn-outline-secondary">Create &amp; add</button>
+            </div>
+        </div>
+        <p class="text-muted small mt-2 mb-0">
+            This adds the course to @(string.IsNullOrWhiteSpace(Model.University) ? "your university" : Model.University)'s
+            list so classmates can pick it too. There's no official catalog to check it
+            against, so please enter it the way your school writes it.
+        </p>
+    </div>
+</section>
+
+<form id="removeCourseForm" asp-action="RemoveCourse" method="post" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<form id="profileForm" asp-action="Edit" method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
 
     <section class="profile-section">
-        <h2 class="h6 text-uppercase text-muted">About you</h2>
+        <h2>About you</h2>
         <div class="form-row">
             <div class="form-group col-md-6">
                 <label asp-for="Name"></label>
@@ -73,93 +169,39 @@
                 <label asp-for="University"></label>
                 <input asp-for="University" class="form-control" />
                 <span asp-validation-for="University" class="text-danger small"></span>
-                <small class="form-text text-muted">You only match with students at the same university.</small>
+                <small class="form-text">You only match with students at the same university.</small>
             </div>
         </div>
         <div class="form-row">
-            <div class="form-group col-md-10">
+            <div class="form-group col-md-9">
                 <label asp-for="Major"></label>
                 <input asp-for="Major" class="form-control" />
                 <span asp-validation-for="Major" class="text-danger small"></span>
             </div>
-            <div class="form-group col-md-2">
+            <div class="form-group col-md-3">
                 <label asp-for="Year"></label>
                 <select asp-for="Year" class="form-control">
-                    <option value="1">1st</option>
-                    <option value="2">2nd</option>
-                    <option value="3">3rd</option>
-                    <option value="4">4th</option>
-                    <option value="5">Grad</option>
+                    <option value="1">1st year</option>
+                    <option value="2">2nd year</option>
+                    <option value="3">3rd year</option>
+                    <option value="4">4th year</option>
+                    <option value="5">Graduate</option>
                 </select>
             </div>
         </div>
-        <div class="form-group">
+        <div class="form-group mb-0">
             <label asp-for="Bio"></label>
             <textarea asp-for="Bio" class="form-control" rows="2" maxlength="280"
-                      placeholder="What you are working on, and what you want from a study partner."></textarea>
+                      placeholder="What you're working on, and what you want from a study partner."></textarea>
             <span asp-validation-for="Bio" class="text-danger small"></span>
         </div>
     </section>
 
     <section class="profile-section">
-        <h2 class="h6 text-uppercase text-muted">Courses</h2>
-        <p class="text-muted small">Shared courses are the strongest signal in the match score.</p>
-        <div class="course-grid">
-            @foreach (var group in Model.AllCourses.GroupBy(c => c.Department).OrderBy(g => g.Key))
-            {
-                <fieldset class="course-group">
-                    <legend class="h6 small text-muted">@group.Key</legend>
-                    @foreach (var course in group)
-                    {
-                        var id = $"course-{course.CourseId}";
-                        <div class="custom-control custom-checkbox">
-                            <input class="custom-control-input" type="checkbox" id="@id"
-                                   name="SelectedCourseIds" value="@course.CourseId"
-                                   @(Model.SelectedCourseIds.Contains(course.CourseId) ? "checked" : "") />
-                            <label class="custom-control-label" for="@id">
-                                <strong>@course.Code</strong>
-                                <span class="text-muted d-block small">@course.Title</span>
-                            </label>
-                        </div>
-                    }
-                </fieldset>
-            }
-        </div>
-    </section>
-
-    <div class="text-right mt-n3 mb-3">
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="collapse" data-target="#addCourseForm">
-            + Add a class not listed above
-        </button>
-    </div>
-
-    <section class="profile-section collapse" id="addCourseForm">
-        <h2 class="h6 text-uppercase text-muted">Add a class</h2>
-        <p class="text-muted small">
-            This can't be checked against a real course catalog, so enter it as a department
-            and number, like "CSCE 310". If someone else already added that course, you'll
-            join theirs rather than creating a duplicate.
-        </p>
-        <div class="form-row align-items-end">
-            <div class="form-group col-sm-3 mb-0">
-                <label for="newCourseCode">Course code</label>
-                <input type="text" id="newCourseCode" name="code" form="addCourseSubmit" class="form-control" placeholder="CSCE 310" />
-            </div>
-            <div class="form-group col-sm-6 mb-0">
-                <label for="newCourseTitle">Title</label>
-                <input type="text" id="newCourseTitle" name="title" form="addCourseSubmit" class="form-control" placeholder="Data Structures and Algorithms" />
-            </div>
-            <div class="form-group col-sm-3 mb-0">
-                <button type="submit" form="addCourseSubmit" class="btn btn-outline-secondary btn-block">Add course</button>
-            </div>
-        </div>
-    </section>
-
-    <section class="profile-section">
-        <h2 class="h6 text-uppercase text-muted">When you are free</h2>
+        <h2>When you are free</h2>
         <p class="text-muted small">Tick every block you could realistically meet in.</p>
         <div class="table-responsive">
-            <table class="table table-sm availability-grid">
+            <table class="table table-sm availability-grid mb-0">
                 <thead>
                     <tr>
                         <th scope="col"></th>
@@ -192,19 +234,19 @@
     </section>
 
     <section class="profile-section">
-        <h2 class="h6 text-uppercase text-muted">How you like to work</h2>
-        <div class="form-row">
-            <div class="form-group col-md-4">
+        <h2>How you like to work</h2>
+        <div class="form-row mb-0">
+            <div class="form-group col-md-4 mb-0">
                 <label asp-for="PreferredNoise"></label>
                 <select asp-for="PreferredNoise" class="form-control"
                         asp-items="Html.GetEnumSelectList<NoiseLevel>()"></select>
             </div>
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-4 mb-0">
                 <label asp-for="Pace"></label>
                 <select asp-for="Pace" class="form-control"
                         asp-items="Html.GetEnumSelectList<StudyPace>()"></select>
             </div>
-            <div class="form-group col-md-4">
+            <div class="form-group col-md-4 mb-0">
                 <label asp-for="PreferredGroupSize"></label>
                 <select asp-for="PreferredGroupSize" class="form-control"
                         asp-items="Html.GetEnumSelectList<GroupSize>()"></select>
@@ -212,19 +254,73 @@
         </div>
     </section>
 
-    <button type="submit" class="btn btn-primary">Save profile</button>
-    <a class="btn btn-link" asp-controller="Matches" asp-action="Index">Back to matches</a>
+    <div class="d-flex align-items-center">
+        <button type="submit" class="btn btn-primary">Save profile</button>
+        <a class="btn btn-link ml-2" asp-controller="Matches" asp-action="Index">Back to matches</a>
+    </div>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        // Bootstrap 4's custom-file input doesn't update its own label; do it by hand.
+        // Bootstrap 4's custom-file input doesn't update its own label.
         document.getElementById('photo')?.addEventListener('change', function (event) {
             var label = event.target.nextElementSibling;
             if (label && event.target.files.length > 0) {
                 label.textContent = event.target.files[0].name;
             }
         });
+
+        // Course picker: choosing a department narrows the second dropdown to that
+        // department's courses. The catalog is emitted server-side and already scoped
+        // to this student's university, so there is nothing to fetch.
+        (function () {
+            var catalog = @Html.Raw(Json.Serialize(
+                Model.UniversityCourses.Select(c => new { dept = c.Department, code = c.Code, title = c.Title })));
+            var enrolled = @Html.Raw(Json.Serialize(Model.MyCourses.Select(c => c.Code)));
+
+            var deptSelect = document.getElementById('deptSelect');
+            var numberSelect = document.getElementById('numberSelect');
+            var addBtn = document.getElementById('addExistingBtn');
+            if (!deptSelect || !numberSelect || !addBtn) return;
+
+            var enrolledSet = new Set(enrolled);
+
+            deptSelect.addEventListener('change', function () {
+                var dept = deptSelect.value;
+                numberSelect.innerHTML = '';
+
+                if (!dept) {
+                    numberSelect.disabled = true;
+                    numberSelect.innerHTML = '<option value="">Choose a department first</option>';
+                    addBtn.disabled = true;
+                    return;
+                }
+
+                var matches = catalog.filter(function (c) { return c.dept === dept; });
+                var placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = 'Choose a course…';
+                numberSelect.appendChild(placeholder);
+
+                matches.forEach(function (c) {
+                    var opt = document.createElement('option');
+                    opt.value = c.code;
+                    // Courses already on the schedule stay visible but unselectable,
+                    // so the list doesn't silently change shape between visits.
+                    opt.textContent = c.code + ' — ' + c.title + (enrolledSet.has(c.code) ? '  (added)' : '');
+                    opt.disabled = enrolledSet.has(c.code);
+                    numberSelect.appendChild(opt);
+                });
+
+                numberSelect.disabled = false;
+                addBtn.disabled = true;
+            });
+
+            numberSelect.addEventListener('change', function () {
+                addBtn.value = numberSelect.value;
+                addBtn.disabled = !numberSelect.value;
+            });
+        })();
     </script>
 }

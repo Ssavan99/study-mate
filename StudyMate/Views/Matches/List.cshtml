@@ -5,8 +5,8 @@
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h1 class="h4 mb-0">All matches</h1>
-        <span class="text-muted small">Best matches first</span>
+        <h1 class="page-title">All matches</h1>
+        <p class="page-subtitle mb-0">Best matches first</p>
     </div>
     <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back to the deck</a>
 </div>
@@ -17,7 +17,7 @@
 }
 else
 {
-    <div class="table-responsive">
+    <div class="match-table-wrap"><div class="table-responsive">
         <table class="table match-table align-middle">
             <thead>
                 <tr>
@@ -73,5 +73,5 @@ else
                 }
             </tbody>
         </table>
-    </div>
+    </div></div>
 }
