@@ -9,12 +9,20 @@ namespace StudyMate.Services
     /// </summary>
     public static class AvatarGenerator
     {
-        // A curated set that sits comfortably alongside Coral & Peach rather than
-        // fighting it — no pure reds or greens that would misread as a status color.
+        // Every entry sits in the warm family or the teal accent family, so a wall of
+        // avatars reads as one palette. Cool purples and pinks were removed: they were
+        // distinguishable but fought the terracotta theme everywhere they appeared.
+        // All eight clear 4.5:1 against white text.
         private static readonly string[] Palette =
         {
-            "#F97316", "#0D9488", "#7C3AED", "#0891B2",
-            "#CA8A04", "#DB2777", "#4338CA", "#059669"
+            "#9A3412", // terracotta
+            "#C2410C", // burnt orange
+            "#B45309", // amber
+            "#A16207", // dark gold
+            "#047857", // teal
+            "#0F766E", // deep teal
+            "#9F1239", // deep rose (warm-leaning)
+            "#4D7C0F"  // olive
         };
 
         public static string ColorFor(int studentId)

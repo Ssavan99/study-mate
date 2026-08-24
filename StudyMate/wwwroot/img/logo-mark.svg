@@ -1,12 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="StudyMate">
-    <defs>
-        <clipPath id="overlap-clip">
-            <circle cx="24" cy="32" r="20" />
-        </clipPath>
-    </defs>
-    <!-- Two overlapping circles: the shared middle is the product's whole idea —
-         a match is where two students' courses, schedules and styles overlap. -->
-    <circle cx="24" cy="32" r="20" fill="#FB7185" />
-    <circle cx="40" cy="32" r="20" fill="#FDBA74" />
-    <circle cx="40" cy="32" r="20" fill="#F4795A" clip-path="url(#overlap-clip)" />
+    <!-- An open book, which doubles as two figures leaning toward each other.
+         The two pages carry the brand's two warm tones so the halves stay
+         distinct at favicon size. -->
+    <path d="M32 19 C25.5 12.5, 14.5 10.5, 6.5 12.5 L6.5 50.5 C14.5 48.5, 25.5 49.5, 32 56 Z" fill="#9A3412" />
+    <path d="M32 19 C38.5 12.5, 49.5 10.5, 57.5 12.5 L57.5 50.5 C49.5 48.5, 38.5 49.5, 32 56 Z" fill="#F59E0B" />
 </svg>

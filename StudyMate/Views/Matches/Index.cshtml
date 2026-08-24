@@ -3,14 +3,16 @@
     ViewData["Title"] = "Your matches";
     var current = Model.FirstOrDefault();
     var remaining = Model.Count;
+    var upNext = Model.Skip(1).Take(3).ToList();
+    var greatCount = Model.Count(m => m.Tier == MatchTier.Great);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
     <div>
-        <h1 class="h4 mb-0">Your matches</h1>
+        <h1 class="page-title">Your matches</h1>
         @if (remaining > 0)
         {
-            <span class="text-muted small">@remaining to review</span>
+            <p class="page-subtitle mb-0">@remaining to review</p>
         }
     </div>
     <a class="btn btn-outline-secondary btn-sm" asp-action="List">See all matches</a>
@@ -26,8 +28,8 @@
     <div class="empty-state text-center py-5">
         <h2 class="h5">You have reviewed everyone for now</h2>
         <p class="text-muted">
-            There is nobody left in your deck. Adding more courses or availability to your
-            profile will widen the pool.
+            There is nobody left in your deck. Adding more courses, switching more of them
+            on, or widening your availability will widen the pool.
         </p>
         <a class="btn btn-primary" asp-controller="Profile" asp-action="Edit">Update your profile</a>
         <a class="btn btn-link" asp-controller="Requests" asp-action="Index">See your requests</a>
@@ -35,71 +37,120 @@
 }
 else
 {
-    <div class="deck">
-        @* Purely decorative: hints that more candidates are queued behind this one. *@
-        @if (remaining > 2) { <div class="deck-shadow deck-shadow-2" aria-hidden="true"></div> }
-        @if (remaining > 1) { <div class="deck-shadow deck-shadow-1" aria-hidden="true"></div> }
+    <div class="deck-layout">
+        <div class="deck">
+            @* Decorative: suggests more candidates queued behind this one. *@
+            @if (remaining > 2) { <div class="deck-shadow deck-shadow-2" aria-hidden="true"></div> }
+            @if (remaining > 1) { <div class="deck-shadow deck-shadow-1" aria-hidden="true"></div> }
 
-        <article class="card match-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div class="d-flex align-items-center">
-                        <partial name="_Avatar" model="current.Candidate" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-lg" }' />
-                        <div class="ml-3">
-                            <h2 class="h4 mb-1">@current.Candidate.Name</h2>
-                            <p class="text-muted mb-0 small">
-                                @current.Candidate.Major · Year @current.Candidate.Year
-                            </p>
+            <article class="card match-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center">
+                            <partial name="_Avatar" model="current.Candidate" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-lg" }' />
+                            <div class="ml-3">
+                                <h2 class="candidate-name">@current.Candidate.Name</h2>
+                                <p class="candidate-meta mb-0">
+                                    @current.Candidate.Major · Year @current.Candidate.Year
+                                </p>
+                            </div>
                         </div>
+                        @if (current.Tier == MatchTier.Great)
+                        {
+                            <span class="tier-badge tier-badge-great">Great Match</span>
+                        }
+                        else if (current.Tier == MatchTier.Strong)
+                        {
+                            <span class="tier-badge tier-badge-strong">Strong Match</span>
+                        }
                     </div>
-                    @if (current.Tier == MatchTier.Great)
+
+                    @if (!string.IsNullOrWhiteSpace(current.Candidate.Bio))
                     {
-                        <span class="tier-badge tier-badge-great">Great Match</span>
+                        <p class="bio">@current.Candidate.Bio</p>
                     }
-                    else if (current.Tier == MatchTier.Strong)
-                    {
-                        <span class="tier-badge tier-badge-strong">Strong Match</span>
-                    }
+
+                    <h3 class="section-label">Why you matched</h3>
+                    <ul class="reasons">
+                        @foreach (var reason in current.Reasons)
+                        {
+                            <li class="reason">@reason.Text</li>
+                        }
+                        @if (!current.Reasons.Any())
+                        {
+                            <li class="reason text-muted small">
+                                Nothing in common yet — try switching on more courses in your profile.
+                            </li>
+                        }
+                    </ul>
                 </div>
 
-                @if (!string.IsNullOrWhiteSpace(current.Candidate.Bio))
+                <div class="card-footer d-flex">
+                    <form asp-action="Pass" method="post" class="flex-fill mr-2">
+                        <input type="hidden" name="id" value="@current.Candidate.StudentId" />
+                        <button type="submit" class="btn btn-outline-secondary btn-block" data-shortcut="n">
+                            Not now
+                        </button>
+                    </form>
+                    <form asp-action="Connect" method="post" class="flex-fill">
+                        <input type="hidden" name="id" value="@current.Candidate.StudentId" />
+                        <button type="submit" class="btn btn-primary btn-block" data-shortcut="c">
+                            Connect
+                        </button>
+                    </form>
+                </div>
+            </article>
+
+            <p class="text-center small mt-3 shortcut-hint">
+                Press <kbd>C</kbd> to connect or <kbd>N</kbd> to skip.
+            </p>
+        </div>
+
+        <aside class="deck-rail">
+            <div class="rail-card">
+                <div class="section-label mb-2">In your deck</div>
+                <div class="rail-stat">
+                    <span class="rail-stat-value">@remaining</span>
+                    <span class="rail-stat-label">@(remaining == 1 ? "student" : "students") to review</span>
+                </div>
+                @if (greatCount > 0)
                 {
-                    <p class="bio">@current.Candidate.Bio</p>
+                    <div class="rail-stat mt-2">
+                        <span class="rail-stat-value">@greatCount</span>
+                        <span class="rail-stat-label">great @(greatCount == 1 ? "match" : "matches")</span>
+                    </div>
                 }
-
-                <h3 class="h6 text-uppercase text-muted reasons-heading">Why you matched</h3>
-                <ul class="reasons list-unstyled mb-0">
-                    @foreach (var reason in current.Reasons)
-                    {
-                        <li class="reason">@reason.Text</li>
-                    }
-                    @if (!current.Reasons.Any())
-                    {
-                        <li class="text-muted small">Nothing in common yet — try adding more courses to your profile.</li>
-                    }
-                </ul>
             </div>
 
-            <div class="card-footer bg-white d-flex">
-                <form asp-action="Pass" method="post" class="flex-fill mr-2">
-                    <input type="hidden" name="id" value="@current.Candidate.StudentId" />
-                    <button type="submit" class="btn btn-outline-secondary btn-block" data-shortcut="n">
-                        Not now
-                    </button>
-                </form>
-                <form asp-action="Connect" method="post" class="flex-fill">
-                    <input type="hidden" name="id" value="@current.Candidate.StudentId" />
-                    <button type="submit" class="btn btn-primary btn-block" data-shortcut="c">
-                        Connect
-                    </button>
-                </form>
+            @if (upNext.Any())
+            {
+                <div class="rail-card">
+                    <div class="section-label mb-2">Up next</div>
+                    @foreach (var next in upNext)
+                    {
+                        <div class="up-next-item">
+                            <partial name="_Avatar" model="next.Candidate" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
+                            <div class="min-width-0">
+                                <div class="up-next-name">@next.Candidate.Name</div>
+                                <div class="up-next-meta">@next.Candidate.Major</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="rail-card">
+                <div class="section-label mb-2">Not seeing enough?</div>
+                <p class="text-muted small mb-2">
+                    Matches come from students at your university who switched on the same
+                    courses as you.
+                </p>
+                <a class="btn btn-outline-secondary btn-sm btn-block" asp-controller="Profile" asp-action="Edit">
+                    Edit your schedule
+                </a>
             </div>
-        </article>
+        </aside>
     </div>
-
-    <p class="text-center text-muted small mt-3 shortcut-hint">
-        Press <kbd>C</kbd> to connect or <kbd>N</kbd> to skip.
-    </p>
 }
 
 @section Scripts {

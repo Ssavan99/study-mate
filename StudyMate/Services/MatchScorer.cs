@@ -107,14 +107,21 @@ namespace StudyMate.Services
             };
         }
 
-        /// <summary>Course ids both students are enrolled in. Does not require Course to be loaded.</summary>
+        /// <summary>
+        /// Course ids both students are enrolled in <em>and</em> have flagged as wanting a
+        /// partner for. A course only counts when both sides opted in — being in the same
+        /// lecture as someone who is not looking for company is not a match signal.
+        /// Does not require Course to be loaded.
+        /// </summary>
         public static HashSet<int> SharedCourseIds(Student viewer, Student candidate)
         {
             var viewerCourseIds = (viewer.Enrollments ?? Enumerable.Empty<Enrollment>())
+                .Where(e => e.SeekingPartner)
                 .Select(e => e.CourseId)
                 .ToHashSet();
 
             return (candidate.Enrollments ?? Enumerable.Empty<Enrollment>())
+                .Where(e => e.SeekingPartner)
                 .Select(e => e.CourseId)
                 .Where(viewerCourseIds.Contains)
                 .ToHashSet();

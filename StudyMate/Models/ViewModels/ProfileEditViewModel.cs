@@ -30,16 +30,24 @@ namespace StudyMate.Models.ViewModels
         [Display(Name = "Group size")]
         public GroupSize PreferredGroupSize { get; set; }
 
-        /// <summary>Course ids the student is enrolled in.</summary>
-        public List<int> SelectedCourseIds { get; set; } = new();
+        /// <summary>
+        /// Course ids the student wants a partner for. Posted from the per-course
+        /// toggles; a course in the schedule but absent here is still enrolled, just
+        /// not looking. Enrolment itself is managed by AddCourse/RemoveCourse.
+        /// </summary>
+        public List<int> SeekingCourseIds { get; set; } = new();
 
         /// <summary>Availability encoded as "day-block", e.g. "2-2" for Tuesday evening.</summary>
         public List<string> SelectedSlots { get; set; } = new();
 
-        /// <summary>Populated by the controller for rendering; not posted back.</summary>
-        public List<Course> AllCourses { get; set; } = new();
+        // --- populated by the controller for rendering; never posted back ---------
 
-        /// <summary>Populated by the controller so the view can render the avatar; not posted back.</summary>
+        /// <summary>The student's own schedule.</summary>
+        public List<EnrolledCourseView> MyCourses { get; set; } = new();
+
+        /// <summary>Every course at this student's university, for the add-course dropdowns.</summary>
+        public List<Course> UniversityCourses { get; set; } = new();
+
         public Student CurrentStudent { get; set; }
 
         public static string SlotKey(DayOfWeek day, TimeBlock block) => $"{(int)day}-{(int)block}";

@@ -13,9 +13,10 @@ using Xunit;
 namespace StudyMate.Tests
 {
     /// <summary>
-    /// Saving the profile rewrites two collections whose entities have composite keys.
-    /// Clearing and re-adding them collides in EF's change tracker, so these tests drive
-    /// the real controller against a real database rather than asserting on a mock.
+    /// The profile save rewrites availability (composite key, so it must be diffed rather
+    /// than cleared and re-added) and flips the seeking-partner flag on existing
+    /// enrolments. It deliberately does NOT add or remove enrolments — that is
+    /// AddCourse/RemoveCourse's job — and these tests pin that boundary.
     /// </summary>
     public class ProfileControllerTests : IDisposable
     {
@@ -39,6 +40,12 @@ namespace StudyMate.Tests
 
             context.Students.Add(TestData.Student(1, "Test Student"));
             context.SaveChanges();
+
+            // Enrolled in 1 and 2, both seeking by default.
+            context.Enrollments.AddRange(
+                new Enrollment { StudentId = 1, CourseId = 1, SeekingPartner = true },
+                new Enrollment { StudentId = 1, CourseId = 2, SeekingPartner = true });
+            context.SaveChanges();
         }
 
         private static ProfileController NewController(AppDbContext context)
@@ -55,17 +62,17 @@ namespace StudyMate.Tests
             };
         }
 
-        private static ProfileEditViewModel Model(IEnumerable<int> courseIds, IEnumerable<string> slots) => new()
+        private static ProfileEditViewModel Model(IEnumerable<int> seekingIds, IEnumerable<string> slots) => new()
         {
             Name = "Test Student",
             Major = "Computer Science",
-            University = "Test University",
+            University = TestData.DefaultUniversity,
             Year = 2,
             Bio = "Testing",
             PreferredNoise = NoiseLevel.Quiet,
             Pace = StudyPace.Steady,
             PreferredGroupSize = GroupSize.Either,
-            SelectedCourseIds = courseIds.ToList(),
+            SeekingCourseIds = seekingIds.ToList(),
             SelectedSlots = slots.ToList()
         };
 
@@ -76,7 +83,7 @@ namespace StudyMate.Tests
             Assert.IsType<RedirectToActionResult>(result);
         }
 
-        private async Task<(List<int> Courses, List<string> Slots)> LoadAsync()
+        private async Task<(List<int> Enrolled, List<int> Seeking, List<string> Slots)> LoadAsync()
         {
             await using var context = new AppDbContext(_options);
             var student = await context.Students
@@ -85,64 +92,33 @@ namespace StudyMate.Tests
                 .SingleAsync(s => s.StudentId == 1);
 
             return (student.Enrollments.Select(e => e.CourseId).OrderBy(i => i).ToList(),
+                    student.Enrollments.Where(e => e.SeekingPartner).Select(e => e.CourseId).OrderBy(i => i).ToList(),
                     student.Availability.Select(a => ProfileEditViewModel.SlotKey(a.Day, a.Block)).OrderBy(k => k).ToList());
         }
+
+        // --- availability (the composite-key diffing path) --------------------
 
         [Fact]
         public async Task SavingTheSameProfileTwice_DoesNotThrow()
         {
-            // The original implementation cleared both collections and re-added identical
-            // rows, which threw on the second save because the deleted entries still held
-            // their keys in the change tracker.
-            var model = Model(new[] { 1, 2 }, new[] { "1-2", "3-2" });
-
-            await SaveAsync(model);
+            // The original implementation cleared and re-added identical rows, which threw
+            // on the second save because the deleted entries still held their keys.
+            await SaveAsync(Model(new[] { 1, 2 }, new[] { "1-2", "3-2" }));
             await SaveAsync(Model(new[] { 1, 2 }, new[] { "1-2", "3-2" }));
 
-            var (courses, slots) = await LoadAsync();
-            Assert.Equal(new[] { 1, 2 }, courses);
+            var (_, seeking, slots) = await LoadAsync();
+            Assert.Equal(new[] { 1, 2 }, seeking);
             Assert.Equal(new[] { "1-2", "3-2" }, slots);
-        }
-
-        [Fact]
-        public async Task AddingAndRemovingCourses_IsPersistedExactly()
-        {
-            await SaveAsync(Model(new[] { 1, 2 }, Array.Empty<string>()));
-            await SaveAsync(Model(new[] { 2, 3 }, Array.Empty<string>()));
-
-            var (courses, _) = await LoadAsync();
-            Assert.Equal(new[] { 2, 3 }, courses);
         }
 
         [Fact]
         public async Task AddingAndRemovingAvailability_IsPersistedExactly()
         {
-            await SaveAsync(Model(Array.Empty<int>(), new[] { "1-0", "2-1" }));
-            await SaveAsync(Model(Array.Empty<int>(), new[] { "2-1", "5-2" }));
+            await SaveAsync(Model(new[] { 1 }, new[] { "1-0", "2-1" }));
+            await SaveAsync(Model(new[] { 1 }, new[] { "2-1", "5-2" }));
 
-            var (_, slots) = await LoadAsync();
+            var (_, _, slots) = await LoadAsync();
             Assert.Equal(new[] { "2-1", "5-2" }, slots);
-        }
-
-        [Fact]
-        public async Task ClearingEverything_LeavesNoRowsBehind()
-        {
-            await SaveAsync(Model(new[] { 1, 2, 3 }, new[] { "1-0", "2-1", "3-2" }));
-            await SaveAsync(Model(Array.Empty<int>(), Array.Empty<string>()));
-
-            var (courses, slots) = await LoadAsync();
-            Assert.Empty(courses);
-            Assert.Empty(slots);
-        }
-
-        [Fact]
-        public async Task CourseIdsThatDoNotExist_AreIgnored()
-        {
-            // A tampered form must not create enrolments against unknown courses.
-            await SaveAsync(Model(new[] { 1, 999 }, Array.Empty<string>()));
-
-            var (courses, _) = await LoadAsync();
-            Assert.Equal(new[] { 1 }, courses);
         }
 
         [Fact]
@@ -150,19 +126,72 @@ namespace StudyMate.Tests
         {
             await SaveAsync(Model(Array.Empty<int>(), new[] { "1-2", "not-a-slot", "9-9", "", "3" }));
 
-            var (_, slots) = await LoadAsync();
+            var (_, _, slots) = await LoadAsync();
             Assert.Equal(new[] { "1-2" }, slots);
         }
 
         [Fact]
-        public async Task DuplicateSelections_DoNotCreateDuplicateRows()
+        public async Task DuplicateAvailabilitySelections_DoNotCreateDuplicateRows()
         {
-            await SaveAsync(Model(new[] { 1, 1, 2 }, new[] { "1-2", "1-2" }));
+            await SaveAsync(Model(new[] { 1 }, new[] { "1-2", "1-2" }));
 
-            var (courses, slots) = await LoadAsync();
-            Assert.Equal(new[] { 1, 2 }, courses);
+            var (_, _, slots) = await LoadAsync();
             Assert.Equal(new[] { "1-2" }, slots);
         }
+
+        // --- seeking-partner flags -------------------------------------------
+
+        [Fact]
+        public async Task SwitchingACourseOff_KeepsTheEnrolmentButClearsTheFlag()
+        {
+            await SaveAsync(Model(new[] { 1 }, Array.Empty<string>()));
+
+            var (enrolled, seeking, _) = await LoadAsync();
+            Assert.Equal(new[] { 1, 2 }, enrolled);   // still on the schedule
+            Assert.Equal(new[] { 1 }, seeking);       // but only one is looking
+        }
+
+        [Fact]
+        public async Task SwitchingEveryCourseOff_LeavesTheScheduleIntact()
+        {
+            await SaveAsync(Model(Array.Empty<int>(), Array.Empty<string>()));
+
+            var (enrolled, seeking, _) = await LoadAsync();
+            Assert.Equal(new[] { 1, 2 }, enrolled);
+            Assert.Empty(seeking);
+        }
+
+        [Fact]
+        public async Task SwitchingACourseBackOn_Works()
+        {
+            await SaveAsync(Model(Array.Empty<int>(), Array.Empty<string>()));
+            await SaveAsync(Model(new[] { 1, 2 }, Array.Empty<string>()));
+
+            var (_, seeking, _) = await LoadAsync();
+            Assert.Equal(new[] { 1, 2 }, seeking);
+        }
+
+        [Fact]
+        public async Task SeekingIdsForCoursesTheStudentIsNotEnrolledIn_AreIgnored()
+        {
+            // A tampered form cannot enrol the student in course 3 via this route.
+            await SaveAsync(Model(new[] { 1, 3, 999 }, Array.Empty<string>()));
+
+            var (enrolled, seeking, _) = await LoadAsync();
+            Assert.Equal(new[] { 1, 2 }, enrolled);
+            Assert.Equal(new[] { 1 }, seeking);
+        }
+
+        [Fact]
+        public async Task TheProfileFormNeverChangesWhichCoursesAreOnTheSchedule()
+        {
+            await SaveAsync(Model(new[] { 1, 2 }, new[] { "1-1" }));
+
+            var (enrolled, _, _) = await LoadAsync();
+            Assert.Equal(new[] { 1, 2 }, enrolled);
+        }
+
+        // --- scalars ----------------------------------------------------------
 
         [Fact]
         public async Task ScalarFieldsAreSaved()

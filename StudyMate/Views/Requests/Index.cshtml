@@ -3,10 +3,10 @@
     ViewData["Title"] = "Requests";
 }
 
-<h1 class="h4 mb-4">Requests</h1>
+<h1 class="page-title mb-4">Requests</h1>
 
 <section class="mb-5">
-    <h2 class="h6 text-uppercase text-muted">Waiting for your answer</h2>
+    <h2 class="section-label">Waiting for your answer</h2>
     @if (!Model.Incoming.Any())
     {
         <p class="text-muted small">Nobody has asked to study with you yet.</p>
@@ -43,7 +43,7 @@
 </section>
 
 <section class="mb-5">
-    <h2 class="h6 text-uppercase text-muted">Your study partners</h2>
+    <h2 class="section-label">Your study partners</h2>
     @if (!Model.Connections.Any())
     {
         <p class="text-muted small">No connections yet. Accepted requests appear here.</p>
@@ -70,7 +70,7 @@
 </section>
 
 <section>
-    <h2 class="h6 text-uppercase text-muted">Requests you sent</h2>
+    <h2 class="section-label">Requests you sent</h2>
     @if (!Model.Outgoing.Any())
     {
         <p class="text-muted small">You have not sent any requests yet.</p>

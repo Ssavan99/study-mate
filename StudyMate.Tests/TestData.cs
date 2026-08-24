@@ -5,8 +5,15 @@ namespace StudyMate.Tests
     /// <summary>Builders that keep the tests readable and independent of database state.</summary>
     internal static class TestData
     {
-        public static Course Course(int id, string code) =>
-            new() { CourseId = id, Code = code, Title = $"Course {code}", Department = code.Split(' ')[0] };
+        public static Course Course(int id, string code, string university = DefaultUniversity) =>
+            new()
+            {
+                CourseId = id,
+                Code = code,
+                Title = $"Course {code}",
+                Department = code.Split(' ')[0],
+                University = university
+            };
 
         public const string DefaultUniversity = "Test University";
 
@@ -32,6 +39,7 @@ namespace StudyMate.Tests
                 PreferredGroupSize = group
             };
 
+        /// <summary>Enrols the student and flags every course as seeking a partner.</summary>
         public static Student WithCourses(this Student student, params Course[] courses)
         {
             foreach (var course in courses)
@@ -40,7 +48,25 @@ namespace StudyMate.Tests
                 {
                     StudentId = student.StudentId,
                     CourseId = course.CourseId,
-                    Course = course
+                    Course = course,
+                    SeekingPartner = true
+                });
+            }
+
+            return student;
+        }
+
+        /// <summary>Enrols the student without flagging the course — on the schedule, not looking.</summary>
+        public static Student WithCoursesNotSeeking(this Student student, params Course[] courses)
+        {
+            foreach (var course in courses)
+            {
+                student.Enrollments.Add(new Enrollment
+                {
+                    StudentId = student.StudentId,
+                    CourseId = course.CourseId,
+                    Course = course,
+                    SeekingPartner = false
                 });
             }
 
