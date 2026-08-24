@@ -43,11 +43,14 @@ else
         <article class="card match-card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h2 class="h4 mb-1">@current.Candidate.Name</h2>
-                        <p class="text-muted mb-0 small">
-                            @current.Candidate.Major · Year @current.Candidate.Year
-                        </p>
+                    <div class="d-flex align-items-center">
+                        <partial name="_Avatar" model="current.Candidate" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-lg" }' />
+                        <div class="ml-3">
+                            <h2 class="h4 mb-1">@current.Candidate.Name</h2>
+                            <p class="text-muted mb-0 small">
+                                @current.Candidate.Major · Year @current.Candidate.Year
+                            </p>
+                        </div>
                     </div>
                     @if (current.Tier == MatchTier.Great)
                     {

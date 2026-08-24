@@ -17,11 +17,14 @@
             @foreach (var request in Model.Incoming)
             {
                 <li class="request-row d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>@request.FromStudent.Name</strong>
-                        <span class="text-muted small d-block">
-                            @request.FromStudent.Major · asked @request.CreatedAt.ToString("d MMM")
-                        </span>
+                    <div class="d-flex align-items-center">
+                        <partial name="_Avatar" model="request.FromStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
+                        <div class="ml-2">
+                            <strong>@request.FromStudent.Name</strong>
+                            <span class="text-muted small d-block">
+                                @request.FromStudent.Major · asked @request.CreatedAt.ToString("d MMM")
+                            </span>
+                        </div>
                     </div>
                     <div class="d-flex">
                         <form asp-action="Decline" method="post" class="mr-2">
@@ -52,9 +55,12 @@
             {
                 var partner = Model.Partner(connection);
                 <li class="request-row d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>@partner.Name</strong>
-                        <span class="text-muted small d-block">@partner.Major</span>
+                    <div class="d-flex align-items-center">
+                        <partial name="_Avatar" model="partner" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
+                        <div class="ml-2">
+                            <strong>@partner.Name</strong>
+                            <span class="text-muted small d-block">@partner.Major</span>
+                        </div>
                     </div>
                     <a class="btn btn-sm btn-outline-secondary" href="mailto:@partner.Email">Email</a>
                 </li>
@@ -75,11 +81,14 @@
             @foreach (var request in Model.Outgoing)
             {
                 <li class="request-row d-flex justify-content-between align-items-center">
-                    <div>
-                        <strong>@request.ToStudent.Name</strong>
-                        <span class="text-muted small d-block">
-                            sent @request.CreatedAt.ToString("d MMM")
-                        </span>
+                    <div class="d-flex align-items-center">
+                        <partial name="_Avatar" model="request.ToStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
+                        <div class="ml-2">
+                            <strong>@request.ToStudent.Name</strong>
+                            <span class="text-muted small d-block">
+                                sent @request.CreatedAt.ToString("d MMM")
+                            </span>
+                        </div>
                     </div>
                     <span class="status status-@request.Status.ToString().ToLowerInvariant()">
                         @request.Status

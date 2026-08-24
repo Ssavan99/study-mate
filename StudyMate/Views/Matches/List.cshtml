@@ -35,8 +35,13 @@ else
                     <tr>
                         <td class="text-muted">@(i + 1)</td>
                         <td>
-                            <strong>@match.Candidate.Name</strong><br />
-                            <span class="text-muted small">@match.Candidate.Major · Year @match.Candidate.Year</span>
+                            <div class="d-flex align-items-center">
+                                <partial name="_Avatar" model="match.Candidate" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
+                                <div class="ml-2">
+                                    <strong>@match.Candidate.Name</strong><br />
+                                    <span class="text-muted small">@match.Candidate.Major · Year @match.Candidate.Year</span>
+                                </div>
+                            </div>
                         </td>
                         <td>
                             @if (match.Tier == MatchTier.Great)

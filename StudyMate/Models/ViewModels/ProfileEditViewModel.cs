@@ -39,6 +39,9 @@ namespace StudyMate.Models.ViewModels
         /// <summary>Populated by the controller for rendering; not posted back.</summary>
         public List<Course> AllCourses { get; set; } = new();
 
+        /// <summary>Populated by the controller so the view can render the avatar; not posted back.</summary>
+        public Student CurrentStudent { get; set; }
+
         public static string SlotKey(DayOfWeek day, TimeBlock block) => $"{(int)day}-{(int)block}";
 
         public static bool TryParseSlot(string key, out DayOfWeek day, out TimeBlock block)

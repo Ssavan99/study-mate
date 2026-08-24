@@ -42,7 +42,16 @@
                     <ul class="navbar-nav">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            <li class="nav-item">
+                            <li class="nav-item d-flex align-items-center">
+                                @{
+                                    var navStudentId = User.GetStudentId();
+                                }
+                                @if (navStudentId != null)
+                                {
+                                    <span class="avatar avatar-sm mr-2">
+                                        @Html.Raw(StudyMate.Services.AvatarGenerator.SvgFor(navStudentId.Value, User.Identity.Name))
+                                    </span>
+                                }
                                 <span class="navbar-text mr-2">@User.Identity.Name</span>
                             </li>
                             <li class="nav-item">

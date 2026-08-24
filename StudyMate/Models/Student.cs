@@ -34,6 +34,17 @@ namespace StudyMate.Models
         [StringLength(280)]
         public string Bio { get; set; }
 
+        /// <summary>
+        /// Optional uploaded profile photo, capped ~1MB and content-type sniffed at
+        /// upload time. Null means "use the generated initials avatar instead."
+        /// Stored in the database rather than a file host: consistent with everything
+        /// else here resetting on restart, and needs no external service or signup.
+        /// </summary>
+        public byte[] PhotoData { get; set; }
+
+        [StringLength(50)]
+        public string PhotoContentType { get; set; }
+
         public NoiseLevel PreferredNoise { get; set; } = NoiseLevel.Quiet;
 
         public StudyPace Pace { get; set; } = StudyPace.Mixed;

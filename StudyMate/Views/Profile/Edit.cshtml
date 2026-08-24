@@ -15,6 +15,48 @@
 {
     <div class="alert alert-success py-2 small">@TempData["Saved"]</div>
 }
+@if (TempData["PhotoError"] != null)
+{
+    <div class="alert alert-danger py-2 small">@TempData["PhotoError"]</div>
+}
+@if (TempData["CourseError"] != null)
+{
+    <div class="alert alert-danger py-2 small">@TempData["CourseError"]</div>
+}
+
+@* The "add a class" fields render inside the main profile form below, but a form
+   cannot be nested inside another form in valid HTML. This standalone form has no
+   visible fields of its own — its inputs bind to it via the form="addCourseSubmit"
+   attribute regardless of where they sit in the document. *@
+<form id="addCourseSubmit" asp-action="AddCourse" method="post" class="d-none">
+    @Html.AntiForgeryToken()
+</form>
+
+<section class="profile-section">
+    <h2 class="h6 text-uppercase text-muted">Photo</h2>
+    <div class="d-flex align-items-center">
+        <partial name="_Avatar" model="Model.CurrentStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-lg" }' />
+        <div class="ml-3">
+            <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" class="form-inline">
+                <div class="custom-file mr-2" style="width: auto;">
+                    <input type="file" name="photo" id="photo" class="custom-file-input" accept="image/jpeg,image/png,image/webp" />
+                    <label class="custom-file-label" for="photo">Choose an image</label>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Upload</button>
+            </form>
+            @if (Model.CurrentStudent?.PhotoData != null)
+            {
+                <form asp-action="RemovePhoto" method="post" class="mt-2">
+                    <button type="submit" class="btn btn-sm btn-link p-0">Remove photo</button>
+                </form>
+            }
+            else
+            {
+                <p class="text-muted small mb-0 mt-2">No photo yet — showing a generated avatar. JPEG, PNG or WebP, up to 1MB.</p>
+            }
+        </div>
+    </div>
+</section>
 
 <form asp-action="Edit" method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
@@ -85,6 +127,34 @@
         </div>
     </section>
 
+    <div class="text-right mt-n3 mb-3">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="collapse" data-target="#addCourseForm">
+            + Add a class not listed above
+        </button>
+    </div>
+
+    <section class="profile-section collapse" id="addCourseForm">
+        <h2 class="h6 text-uppercase text-muted">Add a class</h2>
+        <p class="text-muted small">
+            This can't be checked against a real course catalog, so enter it as a department
+            and number, like "CSCE 310". If someone else already added that course, you'll
+            join theirs rather than creating a duplicate.
+        </p>
+        <div class="form-row align-items-end">
+            <div class="form-group col-sm-3 mb-0">
+                <label for="newCourseCode">Course code</label>
+                <input type="text" id="newCourseCode" name="code" form="addCourseSubmit" class="form-control" placeholder="CSCE 310" />
+            </div>
+            <div class="form-group col-sm-6 mb-0">
+                <label for="newCourseTitle">Title</label>
+                <input type="text" id="newCourseTitle" name="title" form="addCourseSubmit" class="form-control" placeholder="Data Structures and Algorithms" />
+            </div>
+            <div class="form-group col-sm-3 mb-0">
+                <button type="submit" form="addCourseSubmit" class="btn btn-outline-secondary btn-block">Add course</button>
+            </div>
+        </div>
+    </section>
+
     <section class="profile-section">
         <h2 class="h6 text-uppercase text-muted">When you are free</h2>
         <p class="text-muted small">Tick every block you could realistically meet in.</p>
@@ -148,4 +218,13 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Bootstrap 4's custom-file input doesn't update its own label; do it by hand.
+        document.getElementById('photo')?.addEventListener('change', function (event) {
+            var label = event.target.nextElementSibling;
+            if (label && event.target.files.length > 0) {
+                label.textContent = event.target.files[0].name;
+            }
+        });
+    </script>
 }
