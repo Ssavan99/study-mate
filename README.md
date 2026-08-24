@@ -5,6 +5,9 @@ and show the reasoning behind every match.
 
 ![The StudyMate landing page](docs/screenshots/landing.png)
 
+**Live demo:** <https://study-mate-6g24.onrender.com>
+(the free tier sleeps after 15 minutes idle — the first load can take about a minute)
+
 ---
 
 ## What it does
