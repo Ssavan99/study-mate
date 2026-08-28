@@ -368,3 +368,4 @@ FodyWeavers.xsd
 
 # Local Claude Code launch config (dev convenience, not part of the project)
 .claude/
+graphify-out/

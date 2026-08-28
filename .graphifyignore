@@ -1,0 +1,10 @@
+# Generated, dependency, and graph-output content is outside the code map.
+graphify-out/
+**/node_modules/
+**/venv/
+**/.venv/
+**/__pycache__/
+**/bin/
+**/obj/
+**/build/
+StudyMate/wwwroot/lib/
