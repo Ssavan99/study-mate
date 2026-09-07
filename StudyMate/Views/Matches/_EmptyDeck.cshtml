@@ -1,0 +1,15 @@
+@*
+    Shown when there is nobody left to review. Rendered directly by Index when the
+    deck starts out empty, and cloned by site.js (from the <template> Index also
+    renders) when the last card in the client-side stack is decided and no refill
+    is coming — same markup, same copy, either way.
+*@
+<div class="empty-state text-center py-5">
+    <h2 class="h5">You have reviewed everyone for now</h2>
+    <p class="text-muted">
+        There is nobody left in your deck. Adding more courses, switching more of them
+        on, or widening your availability will widen the pool.
+    </p>
+    <a class="btn btn-primary" asp-controller="Profile" asp-action="Edit">Update your profile</a>
+    <a class="btn btn-link" asp-controller="Requests" asp-action="Index">See your requests</a>
+</div>
