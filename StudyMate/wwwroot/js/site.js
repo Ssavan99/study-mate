@@ -332,3 +332,245 @@
 
     card.addEventListener('pointerdown', onPointerDown);
 })();
+
+// ============================================================================
+// Motion layer, part 2. Everything below is a separate IIFE appended after
+// the swipe deck above — none of it touches `card`, `wrap`, or any of the
+// deck's own state, and none of it runs against .match-card (Requirement D).
+// Each IIFE guards every DOM query so a page missing its target element does
+// nothing and throws nothing (Requirement F).
+// ============================================================================
+
+// --- Animated nav indicator (item 4) ---------------------------------------
+// Built entirely at runtime — the indicator element itself never appears in
+// _Layout.cshtml, so a no-JS visitor's nav is unchanged. Active item is
+// derived from the current URL; hover/focus previews other items and the
+// indicator returns to the active one on mouseleave/blur. Position and size
+// both travel through one `transform: translateX() scaleX()` — left/width
+// are never touched (Requirement D in the motion brief).
+(function () {
+    'use strict';
+
+    var nav = document.querySelector('.navbar .navbar-nav');
+    if (!nav) {
+        return;
+    }
+
+    var links = Array.prototype.slice.call(nav.querySelectorAll('a.nav-link'));
+    if (!links.length) {
+        return;
+    }
+
+    var indicator = document.createElement('span');
+    indicator.className = 'nav-indicator';
+    indicator.setAttribute('aria-hidden', 'true');
+    nav.insertBefore(indicator, nav.firstChild);
+
+    function pathOf(link) {
+        try {
+            return new URL(link.href, window.location.href).pathname.toLowerCase().replace(/\/+$/, '') || '/';
+        } catch (err) {
+            return (link.getAttribute('href') || '').toLowerCase();
+        }
+    }
+
+    var currentPath = window.location.pathname.toLowerCase().replace(/\/+$/, '') || '/';
+
+    function findActiveLink() {
+        var best = null;
+        var bestLength = -1;
+        links.forEach(function (link) {
+            var linkPath = pathOf(link);
+            if (!linkPath || linkPath === '/') {
+                return;
+            }
+            var matches = currentPath === linkPath || currentPath.indexOf(linkPath + '/') === 0;
+            if (matches && linkPath.length > bestLength) {
+                best = link;
+                bestLength = linkPath.length;
+            }
+        });
+        return best;
+    }
+
+    var activeLink = findActiveLink();
+
+    function moveTo(link) {
+        if (!link) {
+            indicator.style.transform = 'translateX(0) scaleX(0)';
+            return;
+        }
+        var navRect = nav.getBoundingClientRect();
+        var linkRect = link.getBoundingClientRect();
+        indicator.style.transform = 'translateX(' + (linkRect.left - navRect.left) + 'px) scaleX(' + linkRect.width + ')';
+    }
+
+    function restToActive() {
+        moveTo(activeLink);
+    }
+
+    restToActive();
+    window.addEventListener('resize', restToActive);
+
+    // Web fonts loading after first paint can shift link widths slightly;
+    // re-measure once they've settled rather than leaving the indicator
+    // a few pixels off.
+    if (document.fonts && document.fonts.ready && typeof document.fonts.ready.then === 'function') {
+        document.fonts.ready.then(restToActive);
+    }
+
+    links.forEach(function (link) {
+        link.addEventListener('mouseenter', function () { moveTo(link); });
+        link.addEventListener('focus', function () { moveTo(link); });
+        link.addEventListener('mouseleave', restToActive);
+        link.addEventListener('blur', restToActive);
+    });
+})();
+
+// --- Scroll-triggered reveals + colour-block entrance (items 5 and 7) ------
+// One IntersectionObserver drives both .reveal (fade + rise, set by the
+// views) and the existing .color-block / .demo-panel selectors (scale +
+// fade). Unobserves each element once revealed, per the brief. Reduced
+// motion is checked here directly, not only in CSS: rather than let items
+// wait on a scroll event that may never arrive, everything is marked visible
+// immediately.
+(function () {
+    'use strict';
+
+    var targets = Array.prototype.slice.call(document.querySelectorAll('.reveal, .color-block, .demo-panel'));
+    if (!targets.length) {
+        return;
+    }
+
+    var reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    // Once the entrance has played, strip both classes so the element goes back
+    // to its own styling. While `.reveal.is-visible` is present it pins
+    // `transform`, and it outranks a plain `:hover` rule — so leaving it on
+    // silently kills the hover lift on every element that revealed. Clearing it
+    // is the fix; overriding it with !important only hides the conflict.
+    function settle(el) {
+        // Only safe for .reveal elements. Their hidden-initial state comes from
+        // the .reveal class itself, so dropping both classes returns them to
+        // ordinary styling. .demo-panel and .color-block are hidden by rules keyed
+        // to their own permanent class names — take .is-visible away from those and
+        // they snap straight back to opacity 0. They are not hover-lift targets, so
+        // the pinned transform costs them nothing.
+        if (!el.classList.contains('reveal')) {
+            return;
+        }
+        var done = function () {
+            el.classList.remove('reveal', 'is-visible');
+            el.style.removeProperty('--reveal-delay');
+        };
+        // transitionend can fail to arrive (element already at its end state, tab
+        // backgrounded mid-transition), so a timeout backstops it. Whichever wins,
+        // done() is idempotent.
+        el.addEventListener('transitionend', done, { once: true });
+        window.setTimeout(done, 1200);
+    }
+
+    function revealAll() {
+        targets.forEach(function (el) {
+            el.classList.add('is-visible');
+            settle(el);
+        });
+    }
+
+    if (reducedMotionQuery.matches || typeof window.IntersectionObserver === 'undefined') {
+        revealAll();
+        return;
+    }
+
+    var observer = new window.IntersectionObserver(function (entries, obs) {
+        entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                settle(entry.target);
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.15 });
+
+    // Anything already on screen is shown straight away rather than waiting for
+    // an observer callback. A scroll reveal should only ever apply to content you
+    // have to scroll to; making the top of the page depend on a callback means
+    // that if it never arrives — the document is never visible, the page is
+    // restored from bfcache, an automated or embedded viewer never paints — the
+    // content stays invisible for good. Below-fold elements still wait for the
+    // scroll, which is the whole point of the effect.
+    function onScreen(el) {
+        var r = el.getBoundingClientRect();
+        var h = window.innerHeight || document.documentElement.clientHeight;
+        var w = window.innerWidth || document.documentElement.clientWidth;
+        return r.top < h && r.bottom > 0 && r.left < w && r.right > 0;
+    }
+
+    targets.forEach(function (el) {
+        if (onScreen(el)) {
+            el.classList.add('is-visible');
+            settle(el);
+        } else {
+            observer.observe(el);
+        }
+    });
+})();
+
+// Retire the staggered entrance once it has played. See the .motion-settled
+// rule in site.css: a filled animation goes on holding `transform`, and that
+// held value beats a :hover declaration in the cascade no matter how specific
+// the selector, so the hover lift would never fire on any row that animated in.
+(function () {
+    'use strict';
+
+    var items = Array.prototype.slice.call(
+        document.querySelectorAll('.stagger-item, .deck-rail .rail-card, .up-next-item'));
+    if (!items.length) {
+        return;
+    }
+
+    items.forEach(function (el) {
+        var settle = function () { el.classList.add('motion-settled'); };
+        el.addEventListener('animationend', settle, { once: true });
+        // animationend never arrives if the animation was suppressed (reduced
+        // motion) or the tab was hidden throughout, so backstop it.
+        window.setTimeout(settle, 1500);
+    });
+})();
+
+// --- Marquee strip (item 6) --------------------------------------------------
+// The scroll itself is pure CSS (the marquee-scroll keyframe + animation on
+// .marquee-track). This only enforces that reduced motion stops it outright
+// rather than merely slowing it (the CSS guard already does this too — this
+// is the explicit JS-side check the brief calls for) and keeps it in sync if
+// the user flips that OS setting while the page is open.
+(function () {
+    'use strict';
+
+    var strip = document.querySelector('.marquee-strip');
+    var track = strip ? strip.querySelector('.marquee-track') : null;
+    if (!strip || !track) {
+        return;
+    }
+
+    var reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    function applyMotionPreference() {
+        if (reducedMotionQuery.matches) {
+            track.style.animation = 'none';
+            track.style.transform = 'none';
+        } else {
+            track.style.animation = '';
+            track.style.transform = '';
+        }
+    }
+
+    applyMotionPreference();
+
+    if (typeof reducedMotionQuery.addEventListener === 'function') {
+        reducedMotionQuery.addEventListener('change', applyMotionPreference);
+    } else if (typeof reducedMotionQuery.addListener === 'function') {
+        // Safari < 14
+        reducedMotionQuery.addListener(applyMotionPreference);
+    }
+})();

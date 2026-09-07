@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+    <!-- Motion layer, Requirement A: adds `js` to <html> before any stylesheet
+         paints, so every hidden-initial motion rule below can be scoped
+         `html.js ...` and a no-JS visitor never has content hidden from them. -->
+    <script>document.documentElement.classList.add('js');</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - StudyMate</title>
     <link rel="icon" type="image/svg+xml" href="~/img/logo-mark.svg" />
@@ -76,7 +80,7 @@
     </header>
 
     <div class="container">
-        <main role="main" class="pb-3">
+        <main role="main" class="pb-3 page-fade">
             @RenderBody()
         </main>
     </div>

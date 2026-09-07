@@ -7,8 +7,11 @@
 
    The doc's system is shadow-light by design: colour blocks substitute for
    elevation, hairlines substitute for borders, and the match card is the one
-   sanctioned exception (D6 in the plan) — a real card on a coloured ground gets
-   the app's single shadow. Everywhere else is flat and stroked.
+   sanctioned exception (D6 in the plan): it gets the app's single shadow because
+   the hairline the card model calls for measures 1.25:1 against white and cannot
+   bound a card the user drags. Its ground is neutral (surface-soft) rather than a
+   pastel — the card is the subject on that screen, and a saturated panel behind
+   it competes. Everywhere else is flat and stroked.
 
    Contrast (measured against the doc's own hex values, see the plan's Phase 1
    output for the full table):
@@ -82,7 +85,7 @@
        elevation" spec (line 387: "approx 0 4px 16px rgba(0,0,0,0.06)"), a
        black (#000000, an in-palette colour) at reduced opacity — the same
        technique the doc itself uses for overlay-scrim. */
-    --shadow-match: 0 4px 16px rgba(0, 0, 0, 0.06);
+    --shadow-match: 0 2px 6px rgba(0, 0, 0, 0.05), 0 12px 28px rgba(0, 0, 0, 0.10);
 
     /* Focus ring — 3px solid ink, per the doc's "focus is a ring, not a fill
        change" principle (text-input-focused). Not an animation: it appears
@@ -97,6 +100,9 @@
        states fly-out is 260ms explicitly, so it gets its own token rather
        than being forced onto the nearest named value. */
     --duration-fly: 260ms;
+    /* The marquee loop. Long and linear by necessity: an eased loop visibly
+       changes speed at the seam and stops reading as a continuous strip. */
+    --duration-marquee: 32s;
     --ease-standard: cubic-bezier(.2, .8, .3, 1);
     --ease-entrance: cubic-bezier(.16, 1, .3, 1);
     --ease-exit: cubic-bezier(.4, 0, 1, 1);
@@ -613,7 +619,7 @@ label {
    cards stay canvas white, which is the doc's one sanctioned card-over-a-
    coloured-section arrangement. */
 .demo-panel {
-    background-color: var(--block-cream);
+    background-color: var(--block-lilac);
     border-radius: var(--radius-lg);
     padding: var(--space-xxl);
 }
@@ -650,8 +656,8 @@ label {
 }
 
 /* ============================================================================
-   the review deck — match card gets the app's ONE shadow (plan D6), sitting
-   on a block-cream ground so it reads as a discrete floated object
+   the review deck — match card gets the app's ONE shadow (plan D6). Its ground
+   is neutral, so shadow and hairline together carry the separation
    ========================================================================= */
 
 .deck-layout {
@@ -663,7 +669,11 @@ label {
 
 .deck {
     position: relative;
-    background-color: var(--block-cream);
+    /* Neutral ground rather than a pastel: the card is the subject here, and a
+       saturated panel behind the app's most-used screen competes with it. The
+       ground contrasts only 1.07:1 with the white card, so separation is carried
+       by the card's shadow and hairline together, not by the surface. */
+    background-color: var(--surface-soft);
     border-radius: var(--radius-lg);
     padding: 1.5rem;
 }
@@ -1521,5 +1531,292 @@ select.form-control:disabled {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================================================
+   Motion layer, part 2 — page transitions, hover lift, staggered entrance,
+   the animated nav indicator, scroll-triggered reveals, the marquee strip,
+   and colour-block entrance.
+
+   Appended after everything above; nothing in the existing rules is
+   restructured. Same discipline as the Phase 3 swipe deck: only `transform`
+   and `opacity` are ever animated (Requirement C), every rule that starts an
+   element at `opacity: 0` is scoped under `html.js` so a no-JS visitor never
+   has content hidden from them (Requirement A — the class is added by an
+   inline script at the very top of <head> in _Layout.cshtml, before any
+   stylesheet paints), and every animation is suppressed under
+   prefers-reduced-motion — both here in CSS and, for the marquee and the
+   IntersectionObserver-driven reveals, in the new site.js IIFEs that check
+   the same media query directly (Requirement B). Durations and easing reuse
+   the duration and easing custom properties defined in the :root block above;
+   no new easing curve is invented. The one exception is the marquee's scroll
+   timing, which is necessarily `linear` — an eased loop would visibly change
+   speed at the seam and stop reading as a continuous strip.
+
+   (Do not write a token glob with a star immediately followed by a slash in a
+   comment here: that sequence closes the comment early, and the rule after it
+   gets eaten by the parser's error recovery. That is exactly how the marquee
+   silently stopped animating once already.)
+   ========================================================================= */
+
+/* --- 1. Page transitions --------------------------------------------------
+   View Transitions API for cross-document navigation where supported
+   (this app is server-rendered Razor with full page loads, so every
+   navigation is a cross-document one). Disabled outright under reduced
+   motion rather than left to the browser's own default handling. The CSS
+   fallback below covers browsers without support; it runs as soon as the
+   page is painted and never gates first paint. */
+
+@media (prefers-reduced-motion: no-preference) {
+    @view-transition {
+        navigation: auto;
+    }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: var(--duration-deliberate);
+    animation-timing-function: var(--ease-standard);
+}
+
+@keyframes page-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Scoped to html.js: a no-JS visitor's <main> renders at opacity 1 from the
+   very first frame, exactly as it did before this phase. */
+html.js main.page-fade {
+    animation: page-fade-in var(--duration-deliberate) var(--ease-entrance);
+}
+
+/* --- 2. Hover lift (pointer devices only) ----------------------------------
+   Deliberately excludes .match-card — it is already choreographed by the
+   swipe deck in site.js, and a competing hover transform would fight the
+   drag (Requirement D). */
+
+@media (hover: hover) {
+    .persona-card,
+    .deck-rail .rail-card,
+    .request-row,
+    .match-table tbody tr,
+    .up-next-item {
+        transition: transform var(--duration-standard) var(--ease-standard);
+    }
+
+    .persona-card:hover,
+    .deck-rail .rail-card:hover,
+    .request-row:hover,
+    .match-table tbody tr:hover,
+    .up-next-item:hover {
+        transform: translateY(-2px);
+    }
+}
+
+/* --- 3. Staggered entrance --------------------------------------------------
+   .stagger-item is applied explicitly by the views this phase may edit
+   (Matches/List.cshtml, Requests/Index.cshtml), which set --stagger-index
+   inline per row, capped at 11 in the markup. The deck rail
+   (.rail-card / .up-next-item) lives in Views/Matches/Index.cshtml, which is
+   out of bounds for this phase — so it gets the same treatment purely from
+   CSS, via nth-child, capped at the same 12-item ceiling. */
+
+@keyframes stagger-fade-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+html.js .stagger-item,
+html.js .deck-rail .rail-card,
+html.js .up-next-item {
+    opacity: 0;
+    animation: stagger-fade-rise var(--duration-standard) var(--ease-entrance) both;
+    animation-delay: calc(var(--stagger-index, 0) * 40ms);
+}
+
+/* Once the entrance animation has run, retire it. A filled animation keeps
+   holding its end value for `transform`, and an animation's held value outranks
+   a plain `:hover` declaration in the cascade whatever its specificity — so
+   leaving it in place silently disables the hover lift on every row that
+   animated in. Clearing the animation and pinning opacity directly is the fix;
+   beating it with !important would only paper over the conflict. site.js adds
+   this class on animationend. */
+html.js .stagger-item.motion-settled,
+html.js .deck-rail .rail-card.motion-settled,
+html.js .up-next-item.motion-settled {
+    animation: none;
+    opacity: 1;
+}
+
+.deck-rail .rail-card:nth-child(2)    { --stagger-index: 1; }
+.deck-rail .rail-card:nth-child(3)    { --stagger-index: 2; }
+.deck-rail .rail-card:nth-child(4)    { --stagger-index: 3; }
+.deck-rail .rail-card:nth-child(n+5)  { --stagger-index: 4; }
+
+/* Offset by one: the first child of a .rail-card containing an "Up next"
+   list is its .section-label heading, so the first .up-next-item is itself
+   nth-child(2) — which is why the mapping below starts one index later than
+   the .rail-card one above. */
+.up-next-item:nth-child(3)    { --stagger-index: 1; }
+.up-next-item:nth-child(4)    { --stagger-index: 2; }
+.up-next-item:nth-child(5)    { --stagger-index: 3; }
+.up-next-item:nth-child(6)    { --stagger-index: 4; }
+.up-next-item:nth-child(7)    { --stagger-index: 5; }
+.up-next-item:nth-child(8)    { --stagger-index: 6; }
+.up-next-item:nth-child(9)    { --stagger-index: 7; }
+.up-next-item:nth-child(10)   { --stagger-index: 8; }
+.up-next-item:nth-child(11)   { --stagger-index: 9; }
+.up-next-item:nth-child(12)   { --stagger-index: 10; }
+.up-next-item:nth-child(13)   { --stagger-index: 11; }
+.up-next-item:nth-child(n+14) { --stagger-index: 11; }
+
+/* --- 4. Animated nav indicator ---------------------------------------------
+   Built entirely at runtime by site.js (never in the .cshtml), so it needs
+   no html.js gate: without JS it is simply absent, and the nav is exactly
+   as usable as it was before this phase. Position and width are both
+   carried by one `transform: translateX() scaleX()` — never `left` or
+   `width` — per Requirement D. transform-origin pins the scale to the left
+   edge so scaleX reads as a resize rather than a stretch from centre. */
+
+.navbar .navbar-nav {
+    position: relative;
+}
+
+.nav-indicator {
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    height: 2px;
+    width: 1px;
+    background-color: var(--ink);
+    border-radius: var(--radius-full);
+    transform-origin: 0 50%;
+    transform: translateX(0) scaleX(0);
+    transition: transform var(--duration-standard) var(--ease-standard);
+    pointer-events: none;
+}
+
+/* --- 5 & 7. Scroll-triggered reveals + colour-block entrance ---------------
+   .reveal (fade + rise) is applied by the views this phase may edit to
+   individual elements on the landing page. .color-block and .demo-panel
+   (scale + fade, Requirement 7) are existing selectors and get the same
+   treatment directly — both are driven by the one IntersectionObserver in
+   site.js, which unobserves each element once it has revealed. */
+
+html.js .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity var(--duration-deliberate) var(--ease-entrance),
+                transform var(--duration-deliberate) var(--ease-entrance);
+    transition-delay: var(--reveal-delay, 0ms);
+}
+
+html.js .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+html.js .color-block,
+html.js .demo-panel {
+    opacity: 0;
+    transform: scale(0.98);
+    transition: opacity var(--duration-deliberate) var(--ease-entrance),
+                transform var(--duration-deliberate) var(--ease-entrance);
+}
+
+html.js .color-block.is-visible,
+html.js .demo-panel.is-visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* --- 6. Marquee strip -------------------------------------------------------
+   Design-system component: inverse-canvas ground, inverse-ink text, 36px
+   tall, body-sm type. Full-bleed at every width, like a banner rather than a
+   card. Content is duplicated inline by the view (two identical
+   .marquee-content spans) so translateX(-50%) is exactly one copy wide and
+   the loop has no seam. Paused on hover/focus; stopped outright (not just
+   slowed) under reduced motion, both here and in site.js. */
+
+.marquee-strip {
+    overflow: hidden;
+    height: 36px;
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    background-color: var(--inverse-canvas);
+    color: var(--inverse-ink);
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+}
+
+.marquee-track {
+    display: flex;
+    align-items: center;
+    width: max-content;
+    animation: marquee-scroll var(--duration-marquee) linear infinite;
+}
+
+.marquee-strip:hover .marquee-track,
+.marquee-strip:focus-within .marquee-track {
+    animation-play-state: paused;
+}
+
+.marquee-content {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    padding-right: 2.5rem;
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 330;
+    line-height: 1.45;
+    letter-spacing: -0.14px;
+    color: var(--inverse-ink);
+}
+
+@keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+/* --- Reduced motion — supplements the universal guard above -----------------
+   The universal `*` rule at the top of this file collapses every
+   transition/animation *duration* to near-zero, but leaves `animation-delay`
+   and `transition-delay` alone — which the stagger and reveal features above
+   both use. Left unhandled, that would mean content still waits up to
+   ~440ms before appearing at near-zero speed: technically "reduced" but not
+   "fully visible immediately". This block forces the resting state directly
+   instead. site.js makes the equivalent checks itself for the marquee and
+   the IntersectionObserver-driven reveals (Requirement B), so this is
+   belt-and-suspenders, not the only guard. */
+@media (prefers-reduced-motion: reduce) {
+    .stagger-item,
+    html.js .deck-rail .rail-card,
+    html.js .up-next-item,
+    html.js .reveal,
+    html.js .color-block,
+    html.js .demo-panel {
+        opacity: 1 !important;
+        transform: none !important;
+        animation: none !important;
+        transition: none !important;
+    }
+
+    html.js main.page-fade {
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+
+    .marquee-track {
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .nav-indicator {
+        transition: none !important;
     }
 }

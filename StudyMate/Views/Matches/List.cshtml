@@ -32,7 +32,8 @@ else
                 @for (var i = 0; i < Model.Count; i++)
                 {
                     var match = Model[i];
-                    <tr>
+                    var rowDelay = i < 12 ? i : 11;
+                    <tr class="stagger-item" style="--stagger-index: @rowDelay">
                         <td class="text-muted">@(i + 1)</td>
                         <td>
                             <div class="d-flex align-items-center">

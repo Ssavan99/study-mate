@@ -12,6 +12,13 @@
     </p>
 </div>
 
+<div class="marquee-strip" aria-hidden="true">
+    <div class="marquee-track">
+        <span class="marquee-content">BIOL 312 &middot; MATH 208 &middot; CSCE 310 &middot; TUE EVENING &middot; CHEM 141 &middot; WED AFTERNOON &middot; PSYC 101 &middot; THU MORNING &middot; ECON 203 &middot; FRI EVENING &middot; STAT 210 &middot; MON AFTERNOON &middot;</span>
+        <span class="marquee-content">BIOL 312 &middot; MATH 208 &middot; CSCE 310 &middot; TUE EVENING &middot; CHEM 141 &middot; WED AFTERNOON &middot; PSYC 101 &middot; THU MORNING &middot; ECON 203 &middot; FRI EVENING &middot; STAT 210 &middot; MON AFTERNOON &middot;</span>
+    </div>
+</div>
+
 @if (Model.Any())
 {
     <div class="demo-panel">
@@ -21,10 +28,13 @@
         </p>
 
         <div class="row">
+            @{ var personaIndex = 0; }
             @foreach (var persona in Model)
             {
+                var personaDelay = personaIndex < 12 ? personaIndex : 11;
+                personaIndex++;
                 <div class="col-md-6 col-lg-3 mb-3">
-                    <div class="card h-100 persona-card">
+                    <div class="card h-100 persona-card reveal" style="--reveal-delay: @(personaDelay * 60)ms">
                         <div class="card-body d-flex flex-column">
                             <h3 class="h6 mb-1">@persona.Name</h3>
                             <p class="text-muted small mb-2">
@@ -60,7 +70,7 @@ else
 
 <div class="color-block color-block--lime how-it-works">
     <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-4 reveal" style="--reveal-delay: 0ms">
         <div class="step-number">1</div>
         <h3 class="h6">Say what you are taking</h3>
         <p class="text-muted small">
@@ -68,7 +78,7 @@ else
             whether you want silence or discussion.
         </p>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-4 reveal" style="--reveal-delay: 80ms">
         <div class="step-number">2</div>
         <h3 class="h6">Review ranked matches</h3>
         <p class="text-muted small">
@@ -76,7 +86,7 @@ else
             spelled out for each one.
         </p>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-4 reveal" style="--reveal-delay: 160ms">
         <div class="step-number">3</div>
         <h3 class="h6">Connect</h3>
         <p class="text-muted small">

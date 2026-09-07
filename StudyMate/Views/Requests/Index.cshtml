@@ -14,9 +14,12 @@
     else
     {
         <ul class="list-unstyled request-list">
+            @{ var incomingIndex = 0; }
             @foreach (var request in Model.Incoming)
             {
-                <li class="request-row d-flex justify-content-between align-items-center">
+                var incomingDelay = incomingIndex < 12 ? incomingIndex : 11;
+                incomingIndex++;
+                <li class="request-row stagger-item d-flex justify-content-between align-items-center" style="--stagger-index: @incomingDelay">
                     <div class="d-flex align-items-center">
                         <partial name="_Avatar" model="request.FromStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
                         <div class="ml-2">
@@ -51,11 +54,14 @@
     else
     {
         <ul class="list-unstyled request-list">
+            @{ var connectionIndex = 0; }
             @foreach (var connection in Model.Connections)
             {
                 var partner = Model.Partner(connection);
                 var suggestions = Model.SuggestionsFor(connection);
-                <li class="request-row">
+                var connectionDelay = connectionIndex < 12 ? connectionIndex : 11;
+                connectionIndex++;
+                <li class="request-row stagger-item" style="--stagger-index: @connectionDelay">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                             <partial name="_Avatar" model="partner" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
@@ -91,9 +97,12 @@
     else
     {
         <ul class="list-unstyled request-list">
+            @{ var outgoingIndex = 0; }
             @foreach (var request in Model.Outgoing)
             {
-                <li class="request-row d-flex justify-content-between align-items-center">
+                var outgoingDelay = outgoingIndex < 12 ? outgoingIndex : 11;
+                outgoingIndex++;
+                <li class="request-row stagger-item d-flex justify-content-between align-items-center" style="--stagger-index: @outgoingDelay">
                     <div class="d-flex align-items-center">
                         <partial name="_Avatar" model="request.ToStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
                         <div class="ml-2">
