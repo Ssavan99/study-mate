@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="StudyMate">
     <!-- An open book, which doubles as two figures leaning toward each other.
-         The two pages carry the brand's two warm tones so the halves stay
-         distinct at favicon size. -->
-    <path d="M32 19 C25.5 12.5, 14.5 10.5, 6.5 12.5 L6.5 50.5 C14.5 48.5, 25.5 49.5, 32 56 Z" fill="#9A3412" />
-    <path d="M32 19 C38.5 12.5, 49.5 10.5, 57.5 12.5 L57.5 50.5 C49.5 48.5, 38.5 49.5, 32 56 Z" fill="#F59E0B" />
+         Ink on the left, lilac on the right: the design system's monochrome
+         frame interrupted by one pastel block, and the two halves stay legible
+         against each other at favicon size. -->
+    <path d="M32 19 C25.5 12.5, 14.5 10.5, 6.5 12.5 L6.5 50.5 C14.5 48.5, 25.5 49.5, 32 56 Z" fill="#000000" />
+    <path d="M32 19 C38.5 12.5, 49.5 10.5, 57.5 12.5 L57.5 50.5 C49.5 48.5, 38.5 49.5, 32 56 Z" fill="#C5B0F4" />
 </svg>
