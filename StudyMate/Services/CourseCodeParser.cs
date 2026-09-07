@@ -11,7 +11,7 @@ namespace StudyMate.Services
     /// </summary>
     public static partial class CourseCodeParser
     {
-        [GeneratedRegex(@"^\s*([A-Za-z]{2,6})\s*(\d{1,4})\s*$")]
+        [GeneratedRegex(@"^\s*([A-Za-z]{2,6}(?:\s+[A-Za-z]{1,6})?)\s*(\d{1,4})\s*$")]
         private static partial Regex Pattern();
 
         /// <summary>
@@ -31,7 +31,8 @@ namespace StudyMate.Services
                 return null;
             }
 
-            return $"{match.Groups[1].Value.ToUpperInvariant()} {match.Groups[2].Value}";
+            var department = Regex.Replace(match.Groups[1].Value.Trim(), @"\s+", " ").ToUpperInvariant();
+            return $"{department} {match.Groups[2].Value}";
         }
 
         public static bool IsValid(string input) => Normalize(input) != null;

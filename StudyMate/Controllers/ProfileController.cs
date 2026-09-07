@@ -25,6 +25,7 @@ namespace StudyMate.Controllers
             if (studentId == null) return Forbid();
 
             var student = await _db.Students
+                .Include(s => s.University)
                 .Include(s => s.Enrollments).ThenInclude(e => e.Course)
                 .Include(s => s.Availability)
                 .FirstOrDefaultAsync(s => s.StudentId == studentId.Value);
@@ -36,7 +37,7 @@ namespace StudyMate.Controllers
                 CurrentStudent = student,
                 Name = student.Name,
                 Major = student.Major,
-                University = student.University,
+                UniversityName = student.University?.Name,
                 Year = student.Year,
                 Bio = student.Bio,
                 PreferredNoise = student.PreferredNoise,
@@ -75,7 +76,6 @@ namespace StudyMate.Controllers
 
             student.Name = model.Name.Trim();
             student.Major = model.Major.Trim();
-            student.University = model.University.Trim();
             student.Year = model.Year;
             student.Bio = model.Bio?.Trim();
             student.PreferredNoise = model.PreferredNoise;
@@ -139,9 +139,9 @@ namespace StudyMate.Controllers
             var student = await _db.Students.FirstOrDefaultAsync(s => s.StudentId == studentId.Value);
             if (student == null) return NotFound();
 
-            if (string.IsNullOrWhiteSpace(student.University))
+            if (!student.UniversityId.HasValue)
             {
-                TempData["CourseError"] = "Set your university before adding courses.";
+                TempData["CourseError"] = "Verify an institutional email before adding courses.";
                 return RedirectToAction(nameof(Edit));
             }
 
@@ -153,7 +153,7 @@ namespace StudyMate.Controllers
             }
 
             var course = await _db.Courses
-                .FirstOrDefaultAsync(c => c.University == student.University && c.Code == normalizedCode);
+                .FirstOrDefaultAsync(c => c.UniversityId == student.UniversityId.Value && c.Code == normalizedCode);
 
             if (course == null)
             {
@@ -168,7 +168,7 @@ namespace StudyMate.Controllers
                     Code = normalizedCode,
                     Title = title.Trim(),
                     Department = normalizedCode.Split(' ')[0],
-                    University = student.University
+                    UniversityId = student.UniversityId.Value
                 };
                 _db.Courses.Add(course);
                 await _db.SaveChangesAsync();
@@ -229,11 +229,11 @@ namespace StudyMate.Controllers
                 .OrderBy(c => c.Code, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            model.UniversityCourses = string.IsNullOrWhiteSpace(student.University)
+            model.UniversityCourses = !student.UniversityId.HasValue
                 ? new List<Course>()
                 : await _db.Courses
                     .AsNoTracking()
-                    .Where(c => c.University == student.University)
+                    .Where(c => c.UniversityId == student.UniversityId.Value)
                     .OrderBy(c => c.Department)
                     .ThenBy(c => c.Code)
                     .ToListAsync();

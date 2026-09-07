@@ -36,7 +36,8 @@ namespace StudyMate.Services
             // never appears in either deck, however well their courses or schedules line up.
             var candidates = await _db.Students
                 .AsNoTracking()
-                .Where(s => !excludedIds.Contains(s.StudentId) && s.University == viewer.University)
+                .Where(s => !excludedIds.Contains(s.StudentId) &&
+                            viewer.UniversityId.HasValue && s.UniversityId == viewer.UniversityId)
                 .Include(s => s.Enrollments).ThenInclude(e => e.Course)
                 .Include(s => s.Availability)
                 // Two collection includes in one query multiply rows together; split them

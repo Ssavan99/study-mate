@@ -22,12 +22,9 @@ namespace StudyMate.Models
         [Required, StringLength(60)]
         public string Department { get; set; }
 
-        /// <summary>
-        /// Scopes the course to one school, so the picker only ever offers courses that
-        /// exist where the student actually studies.
-        /// </summary>
-        [Required, StringLength(120)]
-        public string University { get; set; }
+        /// <summary>Scopes the course to one school.</summary>
+        public int UniversityId { get; set; }
+        public University University { get; set; }
 
         public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
     }

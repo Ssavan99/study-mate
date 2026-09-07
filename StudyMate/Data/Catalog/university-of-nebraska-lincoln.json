@@ -1,0 +1,25 @@
+{
+  "departments": [
+    { "code": "CSCE", "courses": [
+      { "code": "CSCE 155", "title": "Computer Science I" },
+      { "code": "CSCE 156", "title": "Computer Science II" },
+      { "code": "CSCE 235", "title": "Discrete Mathematics" },
+      { "code": "CSCE 310", "title": "Data Structures and Algorithms" },
+      { "code": "CSCE 361", "title": "Software Engineering" },
+      { "code": "CSCE 411", "title": "Operating Systems" },
+      { "code": "CSCE 478", "title": "Machine Learning" }
+    ] },
+    { "code": "MATH", "courses": [
+      { "code": "MATH 106", "title": "Calculus I" },
+      { "code": "MATH 107", "title": "Calculus II" },
+      { "code": "MATH 208", "title": "Calculus III" },
+      { "code": "MATH 314", "title": "Linear Algebra" },
+      { "code": "MATH 380", "title": "Statistics and Probability" }
+    ] },
+    { "code": "BIOL", "courses": [
+      { "code": "BIOL 101", "title": "General Biology" },
+      { "code": "BIOL 206", "title": "Genetics" },
+      { "code": "BIOL 312", "title": "Cell Biology" }
+    ] }
+  ]
+}

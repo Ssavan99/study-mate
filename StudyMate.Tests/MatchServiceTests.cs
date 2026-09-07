@@ -27,6 +27,8 @@ namespace StudyMate.Tests
 
             using var context = new AppDbContext(_options);
             context.Database.EnsureCreated();
+            context.Universities.AddRange(TestData.Universities());
+            context.SaveChanges();
             Seed(context);
         }
 

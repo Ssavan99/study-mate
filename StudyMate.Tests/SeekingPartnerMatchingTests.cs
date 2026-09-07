@@ -97,6 +97,8 @@ namespace StudyMate.Tests
 
             using var context = new AppDbContext(_options);
             context.Database.EnsureCreated();
+            context.Universities.AddRange(TestData.Universities());
+            context.SaveChanges();
             context.Courses.Add(TestData.Course(1, "CSCE 310"));
             context.Students.AddRange(
                 TestData.Student(1, "Viewer"),
