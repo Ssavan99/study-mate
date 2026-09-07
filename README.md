@@ -26,8 +26,15 @@ concrete reasons behind it, in plain language.
 ![The match review deck](docs/screenshots/match-deck.png)
 
 Candidates arrive one at a time so a decision is a single choice rather than a
-comparison across a table. The same ranking is also available in full, so the
-ordering itself is visible:
+comparison across a table. Cards can be swiped — drag right to connect, left to
+skip — and the card tilts, lifts and reveals the decision as you drag, so the
+outcome is visible before you commit to it. Everything the swipe does, the two
+buttons and the <kbd>C</kbd> / <kbd>N</kbd> shortcuts also do: the gesture is
+layered on top of ordinary form posts, so the deck works with JavaScript off.
+With `prefers-reduced-motion` set, the card still follows your finger but the
+rotation, lift and fly-off are dropped.
+
+The same ranking is also available in full, so the ordering itself is visible:
 
 ![The full ranked list](docs/screenshots/ranked-list.png)
 
@@ -122,9 +129,22 @@ initials-on-color avatar instead, the same pattern GitHub and Slack use for a de
 
 ![The profile editor](docs/screenshots/profile.png)
 
-Connecting sends a study request, which the other student accepts or declines:
+Connecting sends a study request, which the other student accepts or declines.
+
+Once it is accepted, the app says **when the two of you are actually free**. It
+already knew — availability overlap is part of the score — so stopping at
+"accepted" left the most useful thing it had unsaid. Suggestions are ranked by
+how soon they come round rather than by how much overlap they represent, because
+being told you are both free tomorrow afternoon is worth more than the identical
+slot next Sunday. Shared courses are attached as context where they exist, and
+their absence never withholds the times:
 
 ![The requests page](docs/screenshots/requests.png)
+
+`StudySessionSuggester` takes the current day as an argument instead of reading
+the clock, so its ranking is directly testable for any day of the week, and like
+`MatchScorer` it holds no reference to Entity Framework. It reuses the overlap
+logic rather than restating it.
 
 ---
 
