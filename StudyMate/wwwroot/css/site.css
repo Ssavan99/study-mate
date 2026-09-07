@@ -1420,6 +1420,53 @@ label {
    applies a rotation, wash opacity or fly-out transform, so the swipe still
    works with motion off — it just commits or resets without the visual
    flourish, rather than relying on this guard racing a JS timeout. */
+/* ============================================================================
+   Bootstrap default colours that leak through states we hadn't overridden.
+
+   Found by auditing computed styles in the running app rather than by grepping
+   this file — these values live in bootstrap.min.css, so no amount of checking
+   our own source would have surfaced them:
+     #007bff  .btn-primary:disabled background and border (Bootstrap blue, on a
+              page that is otherwise strictly monochrome and pastel)
+     #e9ecef  .form-control:disabled background
+     #212529  .table colour — near-black but not our ink, and it was applying to
+              all 36 cells of the availability grid
+     #dee2e6  .table cell borders
+   ========================================================================= */
+
+.btn:disabled,
+.btn.disabled,
+.btn-primary:disabled,
+.btn-primary.disabled {
+    /* Disabled reads as "not a live control" by losing the black fill, not by
+       being dimmed — the doc rules out opacity as a hierarchy device. */
+    background-color: var(--surface-soft);
+    background-image: none;
+    border: 1px solid var(--hairline);
+    color: var(--ink);
+    font-weight: 320;
+    opacity: 1;
+    cursor: not-allowed;
+}
+
+.form-control:disabled,
+.form-control[readonly],
+select.form-control:disabled {
+    background-color: var(--surface-soft);
+    color: var(--ink);
+    opacity: 1;
+}
+
+.table {
+    color: var(--ink);
+}
+
+.table th,
+.table td,
+.table thead th {
+    border-color: var(--hairline);
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
