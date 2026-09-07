@@ -54,15 +54,28 @@
             @foreach (var connection in Model.Connections)
             {
                 var partner = Model.Partner(connection);
-                <li class="request-row d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <partial name="_Avatar" model="partner" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
-                        <div class="ml-2">
-                            <strong>@partner.Name</strong>
-                            <span class="text-muted small d-block">@partner.Major</span>
+                var suggestions = Model.SuggestionsFor(connection);
+                <li class="request-row">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <partial name="_Avatar" model="partner" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
+                            <div class="ml-2">
+                                <strong>@partner.Name</strong>
+                                <span class="text-muted small d-block">@partner.Major</span>
+                            </div>
                         </div>
+                        <a class="btn btn-sm btn-outline-secondary" href="mailto:@partner.Email">Email</a>
                     </div>
-                    <a class="btn btn-sm btn-outline-secondary" href="mailto:@partner.Email">Email</a>
+                    @if (suggestions.Any())
+                    {
+                        <h3 class="section-label mt-3">Suggested study times</h3>
+                        <ul class="reasons">
+                            @foreach (var suggestion in suggestions)
+                            {
+                                <li class="reason">@suggestion.Text</li>
+                            }
+                        </ul>
+                    }
                 </li>
             }
         </ul>
