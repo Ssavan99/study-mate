@@ -9,7 +9,12 @@
     <h2 class="section-label">Waiting for your answer</h2>
     @if (!Model.Incoming.Any())
     {
-        <p class="text-muted small">Nobody has asked to study with you yet.</p>
+        <div class="empty-state text-center py-4">
+            <p class="mb-1"><strong>Nobody has asked to study with you yet.</strong></p>
+            <p class="text-muted small mb-0">
+                Incoming requests will show up here as soon as someone wants to connect.
+            </p>
+        </div>
     }
     else
     {
@@ -49,7 +54,11 @@
     <h2 class="section-label">Your study partners</h2>
     @if (!Model.Connections.Any())
     {
-        <p class="text-muted small">No connections yet. Accepted requests appear here.</p>
+        <div class="empty-state text-center py-4">
+            <p class="mb-1"><strong>No connections yet.</strong></p>
+            <p class="text-muted small mb-2">Accepted requests appear here once someone says yes.</p>
+            <a class="btn btn-outline-secondary btn-sm" asp-controller="Matches" asp-action="Index">Review your matches</a>
+        </div>
     }
     else
     {
@@ -92,7 +101,11 @@
     <h2 class="section-label">Requests you sent</h2>
     @if (!Model.Outgoing.Any())
     {
-        <p class="text-muted small">You have not sent any requests yet.</p>
+        <div class="empty-state text-center py-4">
+            <p class="mb-1"><strong>You have not sent any requests yet.</strong></p>
+            <p class="text-muted small mb-2">Connect with a match and it will show up here.</p>
+            <a class="btn btn-outline-secondary btn-sm" asp-controller="Matches" asp-action="Index">Find a match</a>
+        </div>
     }
     else
     {

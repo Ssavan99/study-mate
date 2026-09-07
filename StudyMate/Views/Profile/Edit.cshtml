@@ -35,13 +35,13 @@
     @Html.AntiForgeryToken()
 </form>
 
-<section class="profile-section">
+<section class="profile-section photo-upload">
     <h2>Photo</h2>
     <div class="d-flex align-items-center flex-wrap">
         <partial name="_Avatar" model="Model.CurrentStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-lg" }' />
         <div class="ml-3">
             <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" class="form-inline">
-                <div class="custom-file mr-2" style="width: auto;">
+                <div class="custom-file mr-2">
                     <input type="file" name="photo" id="photo" class="custom-file-input" accept="image/jpeg,image/png,image/webp" />
                     <label class="custom-file-label" for="photo">Choose an image</label>
                 </div>
@@ -134,7 +134,7 @@
                 <label for="newCode">New course code</label>
                 <input type="text" id="newCode" name="code" form="addCourseForm" class="form-control" placeholder="CSCE 310" />
             </div>
-            <div class="form-group" style="flex: 1 1 16rem;">
+            <div class="form-group form-group--grow">
                 <label for="newTitle">Title</label>
                 <input type="text" id="newTitle" name="title" form="addCourseForm" class="form-control" placeholder="Data Structures and Algorithms" />
             </div>

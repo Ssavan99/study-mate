@@ -17,7 +17,7 @@
 
 @* Populated by site.js after an AJAX decision carries a message — same spot
    TempData["Sent"] renders into on a full page load. *@
-<div id="deck-flash">
+<div id="deck-flash" aria-live="polite">
     @if (TempData["Sent"] != null)
     {
         <div class="alert alert-success py-2 small">@TempData["Sent"]</div>

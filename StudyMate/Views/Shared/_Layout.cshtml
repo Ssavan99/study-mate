@@ -8,6 +8,11 @@
     <script>document.documentElement.classList.add('js');</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - StudyMate</title>
+    <meta name="description" content="StudyMate ranks other students at your university by how well you'd actually study together — shared courses first, then overlapping availability, then how you like to work — and shows the reasoning behind every match." />
+    <meta property="og:title" content="@ViewData["Title"] - StudyMate" />
+    <meta property="og:description" content="Find a study partner ranked by shared courses, overlapping availability and how you like to work, with the reasoning shown for every match." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@($"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}")" />
     <link rel="icon" type="image/svg+xml" href="~/img/logo-mark.svg" />
     <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,6 +22,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header>
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom mb-4">
             <div class="container">
@@ -80,7 +86,7 @@
     </header>
 
     <div class="container">
-        <main role="main" class="pb-3 page-fade">
+        <main role="main" id="main-content" class="pb-3 page-fade">
             @RenderBody()
         </main>
     </div>

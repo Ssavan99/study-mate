@@ -166,6 +166,15 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.26px;
     font-weight: 540;
     color: var(--ink);
+    /* Kills orphaned single words on the last line of a wrapped heading.
+       Unsupported browsers just ignore the declaration and wrap as before. */
+    text-wrap: balance;
+}
+
+p {
+    /* Reading-quality line breaks (no orphaned short words) wherever the
+       browser supports it; a no-op fallback elsewhere. */
+    text-wrap: pretty;
 }
 
 /* Weight — not opacity — carries secondary emphasis, per the doc's own rule
@@ -328,6 +337,44 @@ h1, h2, h3, h4, h5, h6 {
     font-size: 0.92rem;
 }
 
+/* Bootstrap leaves the mobile menu toggle on the browser's native focus
+   ring, which is typically blue — not in the palette. */
+.navbar-toggler:focus {
+    outline: none;
+}
+
+.navbar-toggler:focus-visible {
+    box-shadow: var(--focus-ring);
+}
+
+/* Skip-to-content link (accessibility pass): present in the DOM for every
+   page, off-screen at rest via transform (never `top`, per Requirement C —
+   only transform/opacity are ever animated) and brought on-screen on focus
+   so keyboard users can jump past the nav straight to <main>. z-index sits
+   above the sticky navbar (100) so it is never occluded when focused. */
+.skip-link {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 200;
+    background-color: var(--canvas);
+    color: var(--ink);
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-weight: 480;
+    text-decoration: none;
+    transform: translateY(-150%);
+    transition: transform var(--duration-standard) var(--ease-standard);
+}
+
+.skip-link:focus {
+    transform: translateY(0);
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
 .footer {
     position: absolute;
     bottom: 0;
@@ -415,6 +462,26 @@ h1, h2, h3, h4, h5, h6 {
 .btn:focus-visible {
     outline: none;
     box-shadow: var(--focus-ring);
+}
+
+/* Bootstrap's own :focus rules (fired on every focus, not just keyboard
+   focus) put a coloured ring on top of ours — Bootstrap blue on .btn and
+   the primary/outline-primary variants, Bootstrap's grey on the secondary
+   and dark outlines — none of which are in the 14-colour palette. Zeroed
+   here so the ink ring above (:focus-visible only) is the only ring that
+   ever paints. */
+.btn:focus,
+.btn.focus,
+.btn-primary:focus,
+.btn-primary.focus,
+.btn-primary:not(:disabled):not(.disabled):active:focus,
+.btn-outline-secondary:focus,
+.btn-outline-secondary.focus,
+.btn-outline-primary:focus,
+.btn-outline-primary.focus,
+.btn-outline-dark:focus,
+.btn-outline-dark.focus {
+    box-shadow: none;
 }
 
 .btn-sm {
@@ -519,6 +586,20 @@ label {
     border-color: var(--hairline);
     background-color: var(--canvas);
     color: var(--ink);
+}
+
+/* Bootstrap's own focus rule for the (visually hidden) file input puts a
+   Bootstrap-blue border and ring on the label — not in the 14-colour
+   palette. Repointed to the site's ink ring. */
+.custom-file-input:focus ~ .custom-file-label {
+    border-color: var(--hairline);
+    box-shadow: var(--focus-ring);
+}
+
+/* The photo picker in Profile/Edit.cshtml needs its .custom-file to hug its
+   content rather than stretch full-width inside a .form-inline row. */
+.photo-upload .custom-file {
+    width: auto;
 }
 
 /* ============================================================================
@@ -702,7 +783,12 @@ html.js .match-stack > .match-card + .match-card {
    DOM order, so without this the absolutely-positioned cards behind draw on top
    of the card in front — the deck looks like it is showing the wrong candidate
    even though the logic underneath is correct. Small, explicit values rather
-   than an arbitrary large one. */
+   than an arbitrary large one.
+
+   The app's full z-index scale, so any future addition has somewhere to
+   slot in rather than reaching for an arbitrary number: 1-3 the card stack
+   (back to front), 100 the sticky navbar, 200 the skip-to-content link
+   (must clear the navbar once focused). */
 html.js .match-stack > .match-card-wrap,
 html.js .match-stack > .match-card[data-stack-index="0"] {
     position: relative;
@@ -778,6 +864,73 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     background-color: var(--canvas);
     border-top: 1px solid var(--hairline);
     padding: 1.1rem 1.75rem;
+}
+
+/* ============================================================================
+   deck refill skeleton — site.js inserts one of these (as the back of the
+   stack) only if a card fetch is still pending after 300ms, so a fast
+   response never flashes it. It shares the .match-card class so it slots
+   into the existing stack positioning/z-index rules above with no extra
+   selectors, but carries none of a real card's attributes (no student id,
+   no forms, no shortcut buttons) so it can never become interactive or be
+   picked up by the drag/decision logic. Only opacity is animated (the pulse),
+   per the motion spec, and the universal prefers-reduced-motion guard
+   earlier in this file already collapses it to a static rest state.
+   ========================================================================= */
+
+.match-card-skeleton {
+    cursor: default;
+}
+
+.match-card-skeleton .skeleton-bar {
+    display: block;
+    background-color: var(--hairline-soft);
+    border-radius: var(--radius-sm);
+    animation: skeleton-pulse 1.1s var(--ease-standard) infinite;
+}
+
+@keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.match-card-skeleton .skeleton-avatar {
+    width: 68px;
+    height: 68px;
+    border-radius: var(--radius-full);
+    flex: 0 0 auto;
+}
+
+.match-card-skeleton .skeleton-line {
+    height: 14px;
+    margin-bottom: 0.6rem;
+}
+
+.match-card-skeleton .skeleton-line-name {
+    width: 55%;
+    height: 20px;
+}
+
+.match-card-skeleton .skeleton-line-meta {
+    width: 40%;
+    margin-bottom: 0;
+}
+
+.match-card-skeleton .skeleton-line-short {
+    width: 70%;
+    margin-bottom: 0;
+}
+
+.match-card-skeleton .skeleton-block {
+    height: 60px;
+    margin-bottom: 1.4rem;
+}
+
+.match-card-skeleton .skeleton-btn {
+    flex: 1 1 auto;
+    height: 44px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 0;
 }
 
 /* ============================================================================
@@ -910,6 +1063,15 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     color: var(--ink);
     font-weight: 320;
     font-size: 16px;
+    /* "Major · Year N" — the year digit sits still as cards swap in and out. */
+    font-variant-numeric: tabular-nums;
+}
+
+/* Utility for the same "Major · Year N" pattern where it appears without its
+   own dedicated class (the persona cards on the landing page, the ranked
+   list's student column). */
+.tabular-nums {
+    font-variant-numeric: tabular-nums;
 }
 
 .bio {
@@ -923,6 +1085,9 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     border-left: 3px solid var(--ink);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     margin-bottom: 1.4rem;
+    /* A candidate bio is free text and can run long; cap it to a
+       comfortable reading measure rather than the full card width. */
+    max-width: 65ch;
 }
 
 /* Tier badges — the doc's most affirmative block (lime) for the top tier,
@@ -952,6 +1117,7 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     margin: 0;
     padding: 0;
     list-style: none;
+    max-width: 65ch;
 }
 
 .reason {
@@ -1028,6 +1194,9 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     font-weight: 700;
     letter-spacing: -0.04em;
     color: var(--ink);
+    /* The remaining-count / great-match digits shouldn't shift width as a
+       decision changes them. */
+    font-variant-numeric: tabular-nums;
 }
 
 .rail-stat-label {
@@ -1106,6 +1275,7 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     width: 3.2rem;
     font-weight: 700;
     color: var(--ink);
+    font-variant-numeric: tabular-nums;
 }
 
 .reason-inline {
@@ -1163,6 +1333,12 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     accent-color: var(--ink);
 }
 
+.availability-grid input[type="checkbox"]:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-xs);
+}
+
 /* --- the course picker --------------------------------------------------- */
 
 .course-adder {
@@ -1178,6 +1354,12 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
 
 .course-adder .form-group {
     margin-bottom: 0;
+}
+
+/* The "new course" title field needs more room to grow than the code/button
+   fields either side of it in the wrapping flex row. */
+.course-adder .form-group--grow {
+    flex: 1 1 16rem;
 }
 
 /* One row per enrolled course. A seeking-partner course gets a success-green
@@ -1203,6 +1385,7 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     font-size: 0.98rem;
     letter-spacing: -0.01em;
     color: var(--ink);
+    font-variant-numeric: tabular-nums;
 }
 
 .course-title {
@@ -1425,6 +1608,14 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     color: var(--ink);
     font-weight: 320;
     font-size: 16px;
+    /* Doubles as the deck's "N to review" counter (#deck-subtitle). */
+    font-variant-numeric: tabular-nums;
+}
+
+/* Long-form body copy (the Privacy page) reads better capped to a
+   comfortable measure than stretched across its full grid column. */
+.privacy-content p {
+    max-width: 65ch;
 }
 
 /* ============================================================================
@@ -1773,9 +1964,6 @@ html.js .color-block.is-visible,
 html.js .demo-panel.is-visible {
     opacity: 1;
     transform: scale(1);
-}
-
-    to { transform: translateX(-50%); }
 }
 
 /* --- Reduced motion — supplements the universal guard above -----------------

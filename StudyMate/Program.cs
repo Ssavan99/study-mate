@@ -182,6 +182,11 @@ else
     app.UseHsts();
 }
 
+// Catches a bare status code with no body — a 404 from routing, or a
+// controller's NotFound() — and re-executes the pipeline against the
+// matching designed page instead of leaving the host's blank default.
+app.UseStatusCodePagesWithReExecute("/Home/StatusCode", "?code={0}");
+
 app.UseStaticFiles();
 app.UseRouting();
 app.UseRateLimiter();

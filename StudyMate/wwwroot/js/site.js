@@ -252,6 +252,41 @@
         reindexStack();
     }
 
+    // Builds a placeholder the same shape as a real .match-card, for
+    // refillIfNeeded to show if the fetch below is slow. Carries the
+    // .match-card class so it inherits the existing stack positioning and
+    // z-index rules for whichever slot it lands in, but nothing that would
+    // let it be mistaken for a real, decidable card: no data-student-id
+    // (excluded from currentStackIds()), no <form>s, no [data-shortcut]
+    // buttons — setupTopCard() already no-ops on a card missing those
+    // (same guard that protects against a malformed real card), so even a
+    // skeleton that is transiently promoted to the top slot cannot become
+    // interactive.
+    function buildSkeletonCard() {
+        var el = document.createElement('article');
+        el.className = 'card match-card match-card-skeleton';
+        el.setAttribute('aria-hidden', 'true');
+        el.innerHTML =
+            '<div class="card-body">' +
+                '<div class="d-flex align-items-start mb-3">' +
+                    '<span class="skeleton-bar skeleton-avatar"></span>' +
+                    '<div class="ml-3 flex-grow-1">' +
+                        '<span class="skeleton-bar skeleton-line skeleton-line-name"></span>' +
+                        '<span class="skeleton-bar skeleton-line skeleton-line-meta"></span>' +
+                    '</div>' +
+                '</div>' +
+                '<span class="skeleton-bar skeleton-block"></span>' +
+                '<span class="skeleton-bar skeleton-line"></span>' +
+                '<span class="skeleton-bar skeleton-line"></span>' +
+                '<span class="skeleton-bar skeleton-line skeleton-line-short"></span>' +
+            '</div>' +
+            '<div class="card-footer d-flex">' +
+                '<span class="skeleton-bar skeleton-btn mr-2"></span>' +
+                '<span class="skeleton-bar skeleton-btn"></span>' +
+            '</div>';
+        return el;
+    }
+
     function refillIfNeeded() {
         if (poolExhausted || stackEl.children.length >= 3) {
             return Promise.resolve();
@@ -260,10 +295,31 @@
         var ids = currentStackIds();
         var query = ids.map(function (id) { return 'exclude=' + encodeURIComponent(id); }).join('&');
 
+        // Only shown if the fetch is still in flight after 300ms — a fast
+        // response clears the timer below before it ever fires, so nothing
+        // flashes on the common case.
+        var skeleton = null;
+        var skeletonTimer = window.setTimeout(function () {
+            if (stackEl.children.length >= 3) { return; }
+            skeleton = buildSkeletonCard();
+            stackEl.appendChild(skeleton);
+            reindexStack();
+        }, 300);
+
+        function clearSkeleton() {
+            window.clearTimeout(skeletonTimer);
+            if (skeleton && skeleton.parentNode) {
+                skeleton.parentNode.removeChild(skeleton);
+                reindexStack();
+            }
+            skeleton = null;
+        }
+
         return fetch('/Matches/Card' + (query ? ('?' + query) : ''), {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin'
         }).then(function (response) {
+            clearSkeleton();
             if (response.status === 204) {
                 poolExhausted = true;
                 return;
@@ -276,6 +332,7 @@
             // A failed top-up is not a lost decision — it just leaves the stack
             // shallower than 3 until the next successful decision tries again.
             // Only a lost decision (below) is worth reloading over.
+            clearSkeleton();
         });
     }
 
