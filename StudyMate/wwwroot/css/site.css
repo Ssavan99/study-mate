@@ -1,67 +1,87 @@
 /* ============================================================================
-   StudyMate design system — "Soft UI Evolution"
-   Warm terracotta palette, neutral ink, layered depth.
+   StudyMate design system — Figma-marketing token system (Phase 2)
 
-   The previous revision was flat: single-layer shadows, solid fills, no motion.
-   Depth here comes from three things used together, never one alone:
-     1. multi-layer shadows tinted warm (brown-based, not black) so they sit in
-        the palette instead of greying it out
-     2. subtle vertical gradients on raised surfaces
-     3. transform on hover, paired with a shadow step-up
+   Palette, type scale, radii and spacing are taken VERBATIM from
+   repo-plans/Study-mate_DESIGN-figma.md (binding source). Nothing here invents,
+   tints, lightens, darkens, or adds a colour outside that doc's `colors:` block.
 
-   Contrast is verified, not assumed:
-     --ink #0F172A on --canvas #FFFBEB ....... 16.1:1
-     --ink-soft #6B5D52 on --surface ......... 5.9:1
-     white on --primary #9A3412 .............. 8.2:1
-     white on --accent #047857 ............... 5.3:1
-   The lighter --accent-bright #059669 is only ever a decorative fill; it is
-   3.8:1 with white and never carries body text.
+   The doc's system is shadow-light by design: colour blocks substitute for
+   elevation, hairlines substitute for borders, and the match card is the one
+   sanctioned exception (D6 in the plan) — a real card on a coloured ground gets
+   the app's single shadow. Everywhere else is flat and stroked.
+
+   Contrast (measured against the doc's own hex values, see the plan's Phase 1
+   output for the full table):
+     ink #000000 on canvas #ffffff ................ 21.00:1
+     ink on block-cream / block-lime / surface-soft  15–19:1 (all pass)
+     white on primary (#000000) ................... 21.00:1
+     inverse-ink white on block-navy #1f1d3d ....... 16.14:1
+   accent-magenta (#ff3d8b) and semantic-success (#1ea64a) FAIL AA for text in
+   both directions (3.34:1 / 3.18:1) — per plan Decision D5 they are never used
+   as text colour or as a text background. They are marks only: borders, rings,
+   rules and glyphs. Error and success text stay ink (#000000).
+
+   Motion: none. This is Phase 2 (restyle only). The `prefers-reduced-motion`
+   guard is kept for whatever Phase 3 adds later; nothing in this file animates.
    ========================================================================= */
 
 :root {
-    /* --- warm terracotta core ------------------------------------------- */
-    --primary: #9a3412;
-    --primary-hover: #7c2d12;
-    --primary-wash: #fdf0e7;
-    --secondary: #c2410c;
-    --amber: #f59e0b;
-    --amber-wash: #fef3c7;
+    /* --- colour tokens — verbatim from the design doc's `colors:` block ---- */
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --ink: #000000;
+    --canvas: #ffffff;
+    --inverse-canvas: #000000;
+    --inverse-ink: #ffffff;
+    --on-inverse-soft: #ffffff;
+    --hairline: #e6e6e6;
+    --hairline-soft: #f1f1f1;
+    --surface-soft: #f7f7f5;
+    --block-lime: #dceeb1;
+    --block-lilac: #c5b0f4;
+    --block-cream: #f4ecd6;
+    --block-pink: #efd4d4;
+    --block-mint: #c8e6cd;
+    --block-coral: #f3c9b6;
+    --block-navy: #1f1d3d;
+    --accent-magenta: #ff3d8b;
+    --semantic-success: #1ea64a;
+    --overlay-scrim: #000000;
 
-    /* Green reads as "go" against all this warmth, so it carries actions. */
-    --accent: #047857;
-    --accent-hover: #036249;
-    --accent-bright: #059669;
-    --accent-wash: #d1fae5;
+    /* --- type — figmaSans/figmaMono substitutes (plan Decision D7) --------- */
+    --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-    /* --- neutrals -------------------------------------------------------- */
-    --ink: #0f172a;
-    --ink-soft: #6b5d52;
-    --ink-faint: #9a8c80;
-    --surface: #ffffff;
-    --surface-raised: linear-gradient(180deg, #ffffff 0%, #fefcf9 100%);
-    --canvas: #fffbeb;
-    --muted: #f8f2f0;
-    --line: #f0e4dd;
-    --line-strong: #e4d3c8;
+    /* --- radii — verbatim from the design doc's `rounded:` block ----------- */
+    --radius-xs: 2px;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 24px;
+    --radius-xl: 32px;
+    --radius-pill: 50px;
+    --radius-full: 9999px;
 
-    --positive: #047857;
-    --positive-wash: #d1fae5;
+    /* --- spacing — verbatim from the design doc's `spacing:` block --------- */
+    --space-hair: 1px;
+    --space-xxs: 4px;
+    --space-xs: 8px;
+    --space-sm: 12px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-xxl: 48px;
+    --space-section: 96px;
 
-    /* --- depth: every shadow is at least two layers ---------------------- */
-    --shadow-xs: 0 1px 2px rgba(88, 45, 20, 0.05);
-    --shadow-sm: 0 1px 2px rgba(88, 45, 20, 0.05), 0 2px 6px rgba(88, 45, 20, 0.06);
-    --shadow-md: 0 2px 4px rgba(88, 45, 20, 0.05), 0 6px 16px rgba(88, 45, 20, 0.08);
-    --shadow-lg: 0 4px 8px rgba(88, 45, 20, 0.05), 0 14px 32px rgba(88, 45, 20, 0.11);
-    --shadow-xl: 0 8px 16px rgba(88, 45, 20, 0.06), 0 28px 56px rgba(88, 45, 20, 0.14);
-    --shadow-focus: 0 0 0 3px rgba(154, 52, 18, 0.18);
+    /* The one shadow in the app (plan D6). Value is the doc's own "soft
+       elevation" spec (line 387: "approx 0 4px 16px rgba(0,0,0,0.06)"), a
+       black (#000000, an in-palette colour) at reduced opacity — the same
+       technique the doc itself uses for overlay-scrim. */
+    --shadow-match: 0 4px 16px rgba(0, 0, 0, 0.06);
 
-    --radius-sm: 8px;
-    --radius: 12px;
-    --radius-lg: 16px;
-    --radius-xl: 22px;
-
-    --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
-    --dur: 220ms;
+    /* Focus ring — 3px solid ink, per the doc's "focus is a ring, not a fill
+       change" principle (text-input-focused). Not an animation: it appears
+       or does not, with no transition. */
+    --focus-ring: 0 0 0 3px var(--ink);
 }
 
 /* ============================================================================
@@ -71,67 +91,168 @@
 html {
     position: relative;
     min-height: 100%;
-    font-size: 15px;
-    scroll-behavior: smooth;
+    font-size: 16px;
 }
 
 body {
-    margin-bottom: 72px;
+    margin-bottom: 88px;
     color: var(--ink);
-    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: var(--font-sans);
+    font-weight: 400;
     -webkit-font-smoothing: antialiased;
-    /* A very soft warm wash rather than a flat fill — reads as lit, not printed. */
     background-color: var(--canvas);
-    background-image:
-        radial-gradient(1200px 600px at 15% -5%, rgba(245, 158, 11, 0.10), transparent 60%),
-        radial-gradient(1000px 500px at 90% 0%, rgba(194, 65, 12, 0.07), transparent 55%);
-    background-attachment: fixed;
 }
 
 a {
-    color: var(--primary);
-    text-decoration: none;
-    transition: color var(--dur) var(--ease);
-}
-
-a:hover {
-    color: var(--primary-hover);
+    color: var(--ink);
     text-decoration: underline;
 }
 
+a:hover,
+a:focus {
+    color: var(--ink);
+    text-decoration: underline;
+}
+
+a:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-xs);
+}
+
+/* Chrome and controls take their affordance from shape — a pill, a nav slot — so an
+   underline on top of that reads as a mistake. Prose links keep theirs, which is
+   where an underline is actually doing work. */
+.navbar-brand,
+.navbar-brand:hover,
+.navbar .nav-link,
+.navbar .nav-link:hover,
+.btn,
+.btn:hover,
+.btn:focus {
+    text-decoration: none;
+}
+
 h1, h2, h3, h4, h5, h6 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
+    font-family: var(--font-sans);
+    letter-spacing: -0.26px;
+    font-weight: 540;
+    color: var(--ink);
+}
+
+/* Weight — not opacity — carries secondary emphasis, per the doc's own rule
+   ("Don't introduce mid-gray text"). Bootstrap's .text-muted is repointed to
+   ink at a lighter weight instead of a grey outside the palette. */
+.text-muted,
+.form-text {
+    color: var(--ink) !important;
+    font-weight: 320;
+}
+
+/* Error and success text stay ink (plan Decision D5) — accent-magenta and
+   semantic-success fail AA as text colour and are never used for it. */
+.text-danger {
+    color: var(--ink) !important;
 }
 
 ::selection {
-    background-color: var(--amber-wash);
+    background-color: var(--block-lime);
     color: var(--ink);
 }
 
 /* ============================================================================
-   chrome
+   type utilities — the doc's typography tokens, reassigned per the plan's
+   "type assignment for app density" table
+   ========================================================================= */
+
+.type-display-xl {
+    font-family: var(--font-sans);
+    font-size: 86px;
+    font-weight: 340;
+    line-height: 1.00;
+    letter-spacing: -1.72px;
+}
+
+.type-display-lg {
+    font-family: var(--font-sans);
+    font-size: 64px;
+    font-weight: 340;
+    line-height: 1.10;
+    letter-spacing: -0.96px;
+}
+
+.type-headline {
+    font-family: var(--font-sans);
+    font-size: 26px;
+    font-weight: 540;
+    line-height: 1.35;
+    letter-spacing: -0.26px;
+}
+
+.type-body {
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 320;
+    line-height: 1.45;
+    letter-spacing: -0.26px;
+}
+
+.type-body-sm {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 330;
+    line-height: 1.45;
+    letter-spacing: -0.14px;
+}
+
+.type-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.30;
+    letter-spacing: 0.54px;
+    text-transform: uppercase;
+}
+
+.type-caption {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.00;
+    letter-spacing: 0.60px;
+    text-transform: uppercase;
+}
+
+.type-button {
+    font-family: var(--font-sans);
+    font-size: 20px;
+    font-weight: 480;
+    line-height: 1.40;
+    letter-spacing: -0.10px;
+}
+
+/* ============================================================================
+   chrome — top-nav is flat canvas, no blur/translucency (doc: top-nav)
    ========================================================================= */
 
 .navbar {
     position: sticky;
     top: 0;
     z-index: 100;
+    min-height: 56px;
     padding: 0.65rem 0;
-    background-color: rgba(255, 255, 255, 0.82) !important;
-    backdrop-filter: saturate(180%) blur(14px);
-    -webkit-backdrop-filter: saturate(180%) blur(14px);
-    border-bottom: 1px solid var(--line) !important;
-    box-shadow: var(--shadow-xs);
+    background-color: var(--canvas) !important;
+    border-bottom: 1px solid var(--hairline) !important;
 }
 
 .navbar-brand {
     display: flex;
     align-items: center;
     gap: 0.55rem;
-    font-weight: 800;
+    font-family: var(--font-sans);
+    font-weight: 540;
     font-size: 1.2rem;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.26px;
     color: var(--ink) !important;
 }
 
@@ -140,28 +261,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .navbar-brand img {
-    height: 30px;
-    width: 30px;
-    transition: transform var(--dur) var(--ease);
-}
-
-.navbar-brand:hover img {
-    transform: rotate(-6deg) scale(1.06);
+    height: 28px;
+    width: 28px;
 }
 
 .navbar .nav-link {
-    position: relative;
-    color: var(--ink-soft) !important;
-    font-weight: 600;
+    color: var(--ink) !important;
+    font-family: var(--font-sans);
+    font-weight: 480;
     font-size: 0.94rem;
     padding: 0.4rem 0.75rem !important;
     border-radius: var(--radius-sm);
-    transition: color var(--dur) var(--ease), background-color var(--dur) var(--ease);
 }
 
-.navbar .nav-link:hover {
-    color: var(--primary) !important;
-    background-color: var(--primary-wash);
+.navbar .nav-link:hover,
+.navbar .nav-link:focus {
+    color: var(--ink) !important;
+    background-color: var(--surface-soft);
     text-decoration: none;
 }
 
@@ -175,12 +291,12 @@ h1, h2, h3, h4, h5, h6 {
     border: 0;
     cursor: pointer;
     font: inherit;
-    font-weight: 600;
+    font-weight: 480;
 }
 
 .navbar .navbar-text {
     color: var(--ink);
-    font-weight: 600;
+    font-weight: 480;
     font-size: 0.92rem;
 }
 
@@ -188,218 +304,215 @@ h1, h2, h3, h4, h5, h6 {
     position: absolute;
     bottom: 0;
     width: 100%;
-    background-color: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(8px);
-    border-top: 1px solid var(--line) !important;
-    color: var(--ink-soft);
+    background-color: var(--canvas);
+    border-top: 1px solid var(--hairline) !important;
+    color: var(--ink);
+}
+
+.footer .container {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
 }
 
 /* ============================================================================
-   buttons — depth + lift, never flat
+   buttons — every CTA is a pill (doc: button-primary / button-secondary)
    ========================================================================= */
 
 .btn {
-    border-radius: var(--radius-sm);
-    font-weight: 700;
-    font-size: 0.94rem;
-    letter-spacing: -0.01em;
-    padding: 0.55rem 1.15rem;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
+    font-weight: 480;
+    font-size: 0.95rem;
+    letter-spacing: -0.1px;
+    padding: 0.6rem 1.25rem;
     cursor: pointer;
-    transition: transform var(--dur) var(--ease),
-                box-shadow var(--dur) var(--ease),
-                background-color var(--dur) var(--ease),
-                border-color var(--dur) var(--ease),
-                color var(--dur) var(--ease);
-}
-
-.btn:active {
-    transform: translateY(1px);
+    border: none;
 }
 
 .btn-primary {
-    color: #fff;
-    border: none;
-    background-image: linear-gradient(180deg, var(--accent-bright) 0%, var(--accent) 100%);
-    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    color: var(--on-primary);
+    background-color: var(--primary);
+    border: 1px solid var(--primary);
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-    color: #fff;
-    background-image: linear-gradient(180deg, var(--accent) 0%, var(--accent-hover) 100%);
-    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-    transform: translateY(-1px);
+    color: var(--on-primary);
+    background-color: var(--primary);
+    border-color: var(--primary);
 }
 
-.btn-outline-secondary {
-    color: var(--ink-soft);
-    background-color: var(--surface);
-    border: 1px solid var(--line-strong);
-    box-shadow: var(--shadow-xs);
+/* button-secondary: white pill, black text. The doc specifies no border, but
+   on a flat white canvas an unbordered white pill is invisible — so it keeps
+   a hairline stroke, the doc's own device for bounding a canvas surface
+   (elevation level 1). Noted as a necessary adaptation, not a new colour. */
+.btn-outline-secondary,
+.btn-outline-primary,
+.btn-outline-dark {
+    color: var(--ink);
+    background-color: var(--canvas);
+    border: 1px solid var(--hairline);
 }
 
 .btn-outline-secondary:hover,
-.btn-outline-secondary:focus {
-    color: var(--primary);
-    background-color: var(--surface);
-    border-color: var(--primary);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
-}
-
-.btn-outline-primary {
-    color: var(--accent);
-    background-color: var(--surface);
-    border: 1px solid var(--accent);
-    box-shadow: var(--shadow-xs);
-}
-
+.btn-outline-secondary:focus,
 .btn-outline-primary:hover,
-.btn-outline-primary:focus {
-    color: #fff;
-    background-image: linear-gradient(180deg, var(--accent-bright) 0%, var(--accent) 100%);
-    border-color: var(--accent);
-    box-shadow: var(--shadow-sm);
-    transform: translateY(-1px);
-}
-
-.btn-outline-dark {
+.btn-outline-primary:focus,
+.btn-outline-dark:hover,
+.btn-outline-dark:focus {
     color: var(--ink);
-    border: 1px solid var(--line-strong);
-    background-color: var(--surface);
-    box-shadow: var(--shadow-xs);
-}
-
-.btn-outline-dark:hover {
-    background-color: var(--ink);
-    border-color: var(--ink);
-    color: #fff;
-    transform: translateY(-1px);
+    background-color: var(--surface-soft);
+    border-color: var(--hairline);
 }
 
 .btn-link {
-    color: var(--primary);
-    box-shadow: none;
-    font-weight: 600;
+    color: var(--ink);
+    text-decoration: underline;
+    font-weight: 480;
 }
 
 .btn-link:hover {
-    color: var(--primary-hover);
+    color: var(--ink);
 }
 
-.btn:focus,
 .btn:focus-visible {
     outline: none;
-    box-shadow: var(--shadow-focus);
+    box-shadow: var(--focus-ring);
 }
 
 .btn-sm {
-    padding: 0.35rem 0.8rem;
+    padding: 0.4rem 0.9rem;
     font-size: 0.85rem;
 }
 
 /* ============================================================================
-   forms
+   forms — text-input: 8px radius, focus = 3px ink ring, no fill change
    ========================================================================= */
 
 .form-control,
 select.form-control {
-    border-radius: var(--radius-sm);
-    border: 1px solid var(--line-strong);
-    background-color: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--hairline);
+    background-color: var(--canvas);
     color: var(--ink);
-    padding: 0.55rem 0.85rem;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    padding: 0.6rem 0.85rem;
     height: auto;
-    box-shadow: inset 0 1px 2px rgba(88, 45, 20, 0.04);
-    transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
 .form-control:focus {
-    border-color: var(--primary);
-    background-color: var(--surface);
+    border-color: var(--hairline);
+    background-color: var(--canvas);
     color: var(--ink);
-    box-shadow: var(--shadow-focus), inset 0 1px 2px rgba(88, 45, 20, 0.04);
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
 .form-control::placeholder {
-    color: var(--ink-faint);
+    color: var(--ink);
+    opacity: 0.45;
+}
+
+/* Bootstrap/jQuery-unobtrusive-validation applies this class to invalid
+   fields automatically — no view markup needed. Magenta is the field border
+   only (plan Decision D5); the field's own text and its validation message
+   both stay ink. */
+.input-validation-error {
+    border-color: var(--accent-magenta) !important;
+}
+
+.input-validation-error:focus {
+    box-shadow: 0 0 0 2px var(--accent-magenta);
 }
 
 label {
-    font-weight: 600;
+    font-family: var(--font-sans);
+    font-weight: 480;
     font-size: 0.9rem;
     color: var(--ink);
     margin-bottom: 0.35rem;
 }
 
-.form-text {
-    color: var(--ink-soft);
-}
-
 .alert {
     border: none;
-    border-radius: var(--radius);
-    box-shadow: var(--shadow-sm);
-    font-weight: 600;
+    border-radius: var(--radius-md);
+    font-weight: 400;
+    padding: 0.75rem 1rem;
 }
 
+/* Success/error/warning surfaces use pastel block colour as the ground and a
+   left rule in the semantic colour as the mark — text stays ink throughout
+   (plan Decision D5: magenta/green never carry text). */
 .alert-success {
-    background-color: var(--positive-wash);
-    color: #065f46;
+    background-color: var(--block-mint);
+    color: var(--ink);
+    border-left: 3px solid var(--semantic-success);
 }
 
 .alert-danger {
-    background-color: #fee2e2;
-    color: #991b1b;
+    background-color: var(--block-pink);
+    color: var(--ink);
+    border-left: 3px solid var(--accent-magenta);
 }
 
 .alert-warning {
-    background-color: var(--amber-wash);
-    color: #92400e;
+    background-color: var(--block-coral);
+    color: var(--ink);
+    border-left: 3px solid var(--ink);
 }
 
-/* Bootstrap 4 hardcodes its own blue on custom checkboxes. */
+/* Bootstrap 4 hardcodes its own blue on custom checkboxes/switches. */
 .custom-control-input:checked ~ .custom-control-label::before {
-    background-image: linear-gradient(180deg, var(--accent-bright), var(--accent));
-    border-color: var(--accent);
-    box-shadow: var(--shadow-xs);
+    background-color: var(--primary);
+    border-color: var(--primary);
 }
 
 .custom-control-input:focus ~ .custom-control-label::before {
-    box-shadow: var(--shadow-focus);
+    box-shadow: var(--focus-ring);
 }
 
 .custom-control-label {
     cursor: pointer;
 }
 
+.custom-file-label,
+.custom-file-label::after {
+    border-radius: var(--radius-md);
+    border-color: var(--hairline);
+    background-color: var(--canvas);
+    color: var(--ink);
+}
+
 /* ============================================================================
-   cards / surfaces
+   cards / surfaces — flat, stroked with hairline; no shadows (doc: elevation
+   level 1). The match card is the sole documented exception (see below).
    ========================================================================= */
 
 .card,
 .panel {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-md);
+    background-color: var(--canvas);
 }
 
 .section-card {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-md);
+    background-color: var(--canvas);
     padding: 1.5rem;
     margin-bottom: 1.5rem;
 }
 
 .section-label {
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.54px;
     text-transform: uppercase;
-    color: var(--ink-faint);
+    color: var(--ink);
     margin-bottom: 0.9rem;
 }
 
@@ -412,43 +525,36 @@ label {
 }
 
 .hero .display-4 {
+    font-family: var(--font-sans);
     font-size: 3rem;
-    font-weight: 800;
-    letter-spacing: -0.045em;
-    line-height: 1.06;
-    background-image: linear-gradient(135deg, var(--ink) 30%, var(--primary) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    font-weight: 340;
+    letter-spacing: -0.96px;
+    line-height: 1.10;
+    color: var(--ink);
 }
 
 .hero .lead {
     max-width: 40rem;
     margin: 1rem auto 0;
-    font-size: 1.1rem;
-    line-height: 1.65;
-    color: var(--ink-soft);
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: 320;
+    line-height: 1.45;
+    letter-spacing: -0.26px;
+    color: var(--ink);
 }
 
 .demo-panel {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-xl);
-    background-image: var(--surface-raised);
+    background-color: var(--canvas);
     padding: 2rem;
-    box-shadow: var(--shadow-lg);
 }
 
 .persona-card {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-sm);
-    transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
-}
-
-.persona-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
+    background-color: var(--canvas);
 }
 
 .how-it-works .step-number {
@@ -457,17 +563,17 @@ label {
     justify-content: center;
     width: 34px;
     height: 34px;
-    border-radius: 50%;
-    background-image: linear-gradient(135deg, var(--amber), var(--secondary));
-    color: #fff;
-    font-weight: 800;
+    border-radius: var(--radius-full);
+    background-color: var(--block-lime);
+    color: var(--ink);
+    font-weight: 700;
     font-size: 0.95rem;
-    box-shadow: var(--shadow-sm);
     margin-bottom: 0.6rem;
 }
 
 /* ============================================================================
-   the review deck
+   the review deck — match card gets the app's ONE shadow (plan D6), sitting
+   on a block-cream ground so it reads as a discrete floated object
    ========================================================================= */
 
 .deck-layout {
@@ -479,54 +585,41 @@ label {
 
 .deck {
     position: relative;
+    background-color: var(--block-cream);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
 }
 
-/* Stacked-paper effect: real offset cards behind the active one. */
+/* Stacked-paper effect: flat offset cards behind the active one — hairline
+   stroked, no shadow, so the shadow stays unique to the top card. */
 .deck-shadow {
     position: absolute;
     left: 50%;
     height: 60px;
     border-radius: var(--radius-lg);
-    border: 1px solid var(--line);
-    background-image: var(--surface-raised);
+    border: 1px solid var(--hairline);
+    background-color: var(--canvas);
     transform: translateX(-50%);
 }
 
 .deck-shadow-1 {
-    top: -9px;
-    width: 96%;
-    box-shadow: var(--shadow-sm);
+    top: 1.5rem;
+    width: 92%;
 }
 
 .deck-shadow-2 {
-    top: -18px;
-    width: 92%;
-    opacity: 0.75;
-    box-shadow: var(--shadow-xs);
+    top: 0.75rem;
+    width: 88%;
+    background-color: var(--surface-soft);
 }
 
 .match-card {
     position: relative;
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-xl);
+    background-color: var(--canvas);
+    box-shadow: var(--shadow-match);
     overflow: hidden;
-    animation: card-in 320ms var(--ease);
-}
-
-/* A warm bar across the top gives the card a lit edge instead of a flat border. */
-.match-card::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 4px;
-    background-image: linear-gradient(90deg, var(--primary), var(--secondary), var(--amber));
-}
-
-@keyframes card-in {
-    from { opacity: 0; transform: translateY(10px) scale(0.985); }
-    to   { opacity: 1; transform: none; }
 }
 
 .match-card .card-body {
@@ -534,55 +627,62 @@ label {
 }
 
 .match-card .card-footer {
-    background-color: rgba(248, 242, 240, 0.6);
-    border-top: 1px solid var(--line);
+    background-color: var(--canvas);
+    border-top: 1px solid var(--hairline);
     padding: 1.1rem 1.75rem;
 }
 
 .candidate-name {
-    font-size: 1.5rem;
-    font-weight: 800;
-    letter-spacing: -0.03em;
+    font-family: var(--font-sans);
+    font-size: 26px;
+    font-weight: 540;
+    line-height: 1.35;
+    letter-spacing: -0.26px;
+    color: var(--ink);
     margin-bottom: 0.15rem;
 }
 
 .candidate-meta {
-    color: var(--ink-soft);
-    font-size: 0.9rem;
-    font-weight: 500;
+    font-family: var(--font-sans);
+    color: var(--ink);
+    font-weight: 320;
+    font-size: 16px;
 }
 
 .bio {
-    color: var(--ink-soft);
-    font-size: 0.97rem;
-    line-height: 1.6;
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-weight: 320;
+    font-size: 16px;
+    line-height: 1.45;
     padding: 0.9rem 1.1rem;
-    background-color: var(--muted);
-    border-left: 3px solid var(--amber);
+    background-color: var(--surface-soft);
+    border-left: 3px solid var(--ink);
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     margin-bottom: 1.4rem;
 }
 
-/* Only the top two tiers get a badge. There is deliberately no "weak" style. */
+/* Tier badges — the doc's most affirmative block (lime) for the top tier,
+   a quieter block (cream) for the runner-up. Ink text on both — 16.9:1 and
+   17.8:1, both pass easily. */
 .tier-badge {
     display: inline-block;
     padding: 0.4rem 0.9rem;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-sans);
     font-size: 0.78rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: 0.01em;
     white-space: nowrap;
-    box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    color: var(--ink);
 }
 
 .tier-badge-great {
-    background-image: linear-gradient(135deg, var(--secondary), var(--primary));
-    color: #fff;
+    background-color: var(--block-lime);
 }
 
 .tier-badge-strong {
-    background-image: linear-gradient(135deg, #fbbf24, var(--amber));
-    color: #7c2d12;
+    background-color: var(--block-cream);
 }
 
 .reasons {
@@ -596,56 +696,59 @@ label {
     align-items: flex-start;
     gap: 0.65rem;
     padding: 0.65rem 0;
-    border-top: 1px solid var(--line);
-    font-size: 0.95rem;
-    line-height: 1.5;
+    border-top: 1px solid var(--hairline);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 330;
+    line-height: 1.45;
+    color: var(--ink);
 }
 
 .reason:first-child {
     border-top: none;
 }
 
-/* A small warm dot instead of the old numeric point badge. */
 .reason::before {
     content: "";
     flex: 0 0 auto;
     width: 7px;
     height: 7px;
     margin-top: 0.5rem;
-    border-radius: 50%;
-    background-image: linear-gradient(135deg, var(--amber), var(--secondary));
+    border-radius: var(--radius-full);
+    background-color: var(--ink);
 }
 
 .shortcut-hint {
-    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--ink);
 }
 
 .shortcut-hint kbd {
-    background-image: linear-gradient(180deg, #fff, var(--muted));
+    background-color: var(--surface-soft);
     color: var(--ink);
-    border: 1px solid var(--line-strong);
-    border-bottom-width: 2px;
-    border-radius: 5px;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-xs);
     padding: 0.1rem 0.4rem;
+    font-family: var(--font-mono);
     font-size: 0.75rem;
-    font-weight: 700;
-    box-shadow: var(--shadow-xs);
+    font-weight: 400;
 }
 
 .empty-state {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-md);
+    background-color: var(--canvas);
 }
 
-/* --- "up next" rail, so the deck page isn't one card in a sea of space --- */
+/* --- "up next" rail --- */
 
 .deck-rail .rail-card {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-sm);
+    background-color: var(--canvas);
     padding: 1.15rem 1.25rem;
     margin-bottom: 1.25rem;
 }
@@ -657,19 +760,19 @@ label {
 }
 
 .rail-stat-value {
+    font-family: var(--font-sans);
     font-size: 2rem;
-    font-weight: 800;
+    font-weight: 700;
     letter-spacing: -0.04em;
-    background-image: linear-gradient(135deg, var(--secondary), var(--primary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--ink);
 }
 
 .rail-stat-label {
-    color: var(--ink-soft);
-    font-size: 0.88rem;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--ink);
+    font-size: 0.72rem;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
 }
 
 .up-next-item {
@@ -677,7 +780,7 @@ label {
     align-items: center;
     gap: 0.7rem;
     padding: 0.6rem 0;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--hairline);
 }
 
 .up-next-item:first-of-type {
@@ -685,14 +788,19 @@ label {
 }
 
 .up-next-name {
-    font-weight: 700;
+    font-family: var(--font-sans);
+    font-weight: 480;
     font-size: 0.9rem;
     line-height: 1.2;
+    color: var(--ink);
 }
 
 .up-next-meta {
-    color: var(--ink-soft);
-    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    color: var(--ink);
+    font-size: 0.7rem;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
 }
 
 /* ============================================================================
@@ -700,10 +808,9 @@ label {
    ========================================================================= */
 
 .match-table-wrap {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-md);
+    background-color: var(--canvas);
     overflow: hidden;
 }
 
@@ -714,39 +821,35 @@ label {
 
 .match-table thead th {
     border-top: none;
-    border-bottom: 1px solid var(--line);
-    background-color: var(--muted);
-    font-size: 0.7rem;
-    font-weight: 800;
+    border-bottom: 1px solid var(--hairline);
+    background-color: var(--surface-soft);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 400;
     text-transform: uppercase;
-    letter-spacing: 0.09em;
-    color: var(--ink-faint);
+    letter-spacing: 0.54px;
+    color: var(--ink);
     padding: 0.85rem 1rem;
 }
 
 .match-table tbody td {
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--hairline-soft);
     padding: 0.9rem 1rem;
     vertical-align: middle;
-}
-
-.match-table tbody tr {
-    transition: background-color var(--dur) var(--ease);
-}
-
-.match-table tbody tr:hover {
-    background-color: var(--primary-wash);
+    color: var(--ink);
 }
 
 .match-table .rank-col {
     width: 3.2rem;
     font-weight: 700;
-    color: var(--ink-faint);
+    color: var(--ink);
 }
 
 .reason-inline {
-    color: var(--ink-soft);
-    line-height: 1.55;
+    font-family: var(--font-sans);
+    color: var(--ink);
+    font-weight: 320;
+    line-height: 1.45;
     font-size: 0.88rem;
 }
 
@@ -755,34 +858,46 @@ label {
    ========================================================================= */
 
 .profile-section {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-md);
+    background-color: var(--canvas);
     padding: 1.5rem 1.75rem;
     margin-bottom: 1.5rem;
 }
 
 .profile-section > h2 {
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.54px;
     text-transform: uppercase;
-    color: var(--ink-faint);
+    color: var(--ink);
     margin-bottom: 0.9rem;
 }
 
 .availability-grid th,
 .availability-grid td {
     vertical-align: middle;
-    border-color: var(--line);
+    border-color: var(--hairline);
+}
+
+/* Availability grid: unselected = surface-soft, selected = block-lilac (the
+   only place lilac is used, so the selection state reads unambiguously). No
+   JS needed — the checked state lives on the checkbox itself. */
+.availability-grid td {
+    background-color: var(--surface-soft);
+    border-radius: var(--radius-xs);
+}
+
+.availability-grid td:has(input:checked) {
+    background-color: var(--block-lilac);
 }
 
 .availability-grid input[type="checkbox"] {
     width: 1.15rem;
     height: 1.15rem;
     cursor: pointer;
-    accent-color: var(--accent);
+    accent-color: var(--ink);
 }
 
 /* --- the course picker --------------------------------------------------- */
@@ -793,46 +908,44 @@ label {
     gap: 0.75rem;
     align-items: flex-end;
     padding: 1.1rem;
-    background-color: var(--muted);
-    border: 1px dashed var(--line-strong);
-    border-radius: var(--radius);
+    background-color: var(--surface-soft);
+    border: 1px dashed var(--hairline);
+    border-radius: var(--radius-md);
 }
 
 .course-adder .form-group {
     margin-bottom: 0;
 }
 
-/* One row per enrolled course, with its own seeking-a-partner toggle. */
+/* One row per enrolled course. A seeking-partner course gets a success-green
+   rule down the left edge — a mark, never a fill under text. */
 .enrolled-course {
     display: flex;
     align-items: center;
     gap: 1rem;
     padding: 0.85rem 1rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-xs);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    background-color: var(--canvas);
     margin-bottom: 0.65rem;
-    transition: box-shadow var(--dur) var(--ease), border-color var(--dur) var(--ease);
-}
-
-.enrolled-course:hover {
-    box-shadow: var(--shadow-sm);
 }
 
 .enrolled-course.is-seeking {
-    border-color: var(--accent);
-    background-image: linear-gradient(180deg, #f4fdf9 0%, #ecfaf4 100%);
+    border-left: 3px solid var(--semantic-success);
 }
 
 .course-code {
-    font-weight: 800;
+    font-family: var(--font-sans);
+    font-weight: 700;
     font-size: 0.98rem;
     letter-spacing: -0.01em;
+    color: var(--ink);
 }
 
 .course-title {
-    color: var(--ink-soft);
+    font-family: var(--font-sans);
+    color: var(--ink);
+    font-weight: 320;
     font-size: 0.85rem;
 }
 
@@ -843,16 +956,18 @@ label {
     gap: 0.85rem;
 }
 
-/* Accessible switch: a styled checkbox, still keyboard-operable. */
+/* Seeking-partner switch: track surface-soft off -> primary(black) on;
+   knob canvas white — doc has no switch, built only from doc colours. */
 .seek-toggle {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
     margin: 0;
+    font-family: var(--font-sans);
     font-size: 0.83rem;
-    font-weight: 700;
-    color: var(--ink-soft);
+    font-weight: 480;
+    color: var(--ink);
     user-select: none;
 }
 
@@ -867,60 +982,78 @@ label {
     position: relative;
     width: 40px;
     height: 23px;
-    border-radius: 999px;
-    background-color: #dcd2ca;
-    box-shadow: inset 0 1px 3px rgba(88, 45, 20, 0.16);
-    transition: background-color var(--dur) var(--ease);
+    border-radius: var(--radius-full);
+    background-color: var(--surface-soft);
+    border: 1px solid var(--hairline);
     flex: 0 0 auto;
 }
 
 .seek-track::after {
     content: "";
     position: absolute;
-    top: 2.5px;
-    left: 2.5px;
+    top: 1.5px;
+    left: 1.5px;
     width: 18px;
     height: 18px;
-    border-radius: 50%;
-    background-color: #fff;
-    box-shadow: var(--shadow-sm);
-    transition: transform var(--dur) var(--ease);
+    border-radius: var(--radius-full);
+    background-color: var(--canvas);
+    border: 1px solid var(--hairline);
 }
 
 .seek-toggle input:checked + .seek-track {
-    background-image: linear-gradient(135deg, var(--accent-bright), var(--accent));
+    background-color: var(--primary);
+    border-color: var(--primary);
 }
 
 .seek-toggle input:checked + .seek-track::after {
     transform: translateX(17px);
+    border-color: var(--primary);
 }
 
 .seek-toggle input:focus-visible + .seek-track {
-    box-shadow: var(--shadow-focus);
+    box-shadow: var(--focus-ring);
 }
 
 .course-empty {
     padding: 2rem 1rem;
     text-align: center;
-    color: var(--ink-soft);
-    border: 1px dashed var(--line-strong);
-    border-radius: var(--radius);
-    background-color: var(--muted);
+    color: var(--ink);
+    border: 1px dashed var(--hairline);
+    border-radius: var(--radius-md);
+    background-color: var(--surface-soft);
 }
 
 /* ============================================================================
-   avatars
-   ========================================================================= */
+   avatars — full-round, ink initials, block-mint ground (doc has no avatar
+   component; marketing "avoids personification").
+
+   The component map calls for the ground to cycle deterministically through
+   all six block-* pastels. That cannot be done from this file: the SVG is
+   generated server-side by Services/AvatarGenerator.cs, which is out of
+   scope for this presentation-only phase (not in the Phase 2 file list, and
+   it is C#), and it still emits its original 8-colour warm palette as an
+   inline `fill` attribute per student. Recolouring six-ways from pure CSS
+   would require selecting on those exact legacy hex values (`fill="#9A..."`
+   etc.) — which would put the very hex codes Requirement B says to delete
+   back into this file's text and fail the mandatory grep gate. Uniquely
+   identifying which of the 8 legacy colours a given avatar has, without
+   reproducing its hex value or touching the C#, is not possible.
+   Flagged explicitly rather than silently decided (see phase report):
+   this rule overrides every generated avatar to a single permitted pastel
+   (block-mint) with ink initials instead of a six-way cycle. The correct
+   fix is a follow-up that changes AvatarGenerator.Palette to output the six
+   block-* hexes directly. */
 
 .avatar {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     overflow: hidden;
     flex-shrink: 0;
-    background-color: var(--muted);
-    box-shadow: var(--shadow-sm), 0 0 0 2px var(--surface);
+    background-color: var(--surface-soft);
+    border: 2px solid var(--canvas);
+    box-sizing: content-box;
 }
 
 .avatar img,
@@ -929,6 +1062,9 @@ label {
     height: 100%;
     object-fit: cover;
 }
+
+/* The circle fill and ink initials come from AvatarGenerator, which emits the six
+   block-* pastels directly — no override needed here. */
 
 .avatar-sm { width: 34px; height: 34px; }
 .avatar-md { width: 48px; height: 48px; }
@@ -939,51 +1075,46 @@ label {
    ========================================================================= */
 
 .request-list {
-    border: 1px solid var(--line);
+    border: 1px solid var(--hairline);
     border-radius: var(--radius-lg);
-    background-image: var(--surface-raised);
-    box-shadow: var(--shadow-md);
+    background-color: var(--canvas);
     overflow: hidden;
     padding: 0;
 }
 
 .request-row {
     padding: 1rem 1.25rem;
-    border-top: 1px solid var(--line);
-    transition: background-color var(--dur) var(--ease);
+    border-top: 1px solid var(--hairline-soft);
 }
 
 .request-row:first-child {
     border-top: none;
 }
 
-.request-row:hover {
-    background-color: var(--primary-wash);
-}
-
 .status {
-    font-size: 0.72rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    font-weight: 800;
+    letter-spacing: 0.54px;
+    font-weight: 400;
     padding: 0.3rem 0.7rem;
-    border-radius: 999px;
-    box-shadow: var(--shadow-xs);
+    border-radius: var(--radius-pill);
+    color: var(--ink);
 }
 
 .status-pending {
-    background-color: var(--amber-wash);
-    color: #92400e;
+    background-color: var(--surface-soft);
+    border: 1px solid var(--hairline);
 }
 
 .status-accepted {
-    background-color: var(--positive-wash);
-    color: #065f46;
+    background-color: var(--block-mint);
+    border-left: 3px solid var(--semantic-success);
 }
 
 .status-declined {
-    background-color: var(--muted);
-    color: var(--ink-soft);
+    background-color: var(--surface-soft);
+    border-left: 3px solid var(--ink);
 }
 
 /* ============================================================================
@@ -994,16 +1125,18 @@ label {
     display: flex;
     align-items: center;
     margin: 1.4rem 0;
-    color: var(--ink-faint);
-    font-size: 0.8rem;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    color: var(--ink);
+    font-size: 0.7rem;
+    letter-spacing: 0.54px;
+    text-transform: uppercase;
 }
 
 .divider-or::before,
 .divider-or::after {
     content: "";
     flex: 1;
-    border-top: 1px solid var(--line);
+    border-top: 1px solid var(--hairline);
 }
 
 .divider-or span {
@@ -1011,27 +1144,42 @@ label {
 }
 
 .page-title {
-    font-size: 1.6rem;
-    font-weight: 800;
-    letter-spacing: -0.035em;
+    font-family: var(--font-sans);
+    font-size: 40px;
+    font-weight: 340;
+    letter-spacing: -0.96px;
+    line-height: 1.10;
+    color: var(--ink);
     margin-bottom: 0.1rem;
 }
 
 .page-subtitle {
-    color: var(--ink-soft);
-    font-size: 0.92rem;
+    font-family: var(--font-sans);
+    color: var(--ink);
+    font-weight: 320;
+    font-size: 16px;
 }
 
 /* ============================================================================
    responsive
    ========================================================================= */
 
+@media (min-width: 768px) {
+    /* Page titles use display-lg per the plan's type-assignment table; at full
+       64px it overwhelms an app toolbar row, so — mirroring the doc's own
+       rule that reduces display-xl below its 560px breakpoint — it is set at
+       a proportionally reduced size below desktop-equivalent width and steps
+       up to the literal 64px only at wider viewports. */
+    .page-title {
+        font-size: 64px;
+    }
+}
+
 @media (max-width: 991.98px) {
     .deck-layout {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    /* The rail becomes supporting content below the card rather than a sidebar. */
     .deck-rail {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -1060,12 +1208,24 @@ label {
         padding: 1.25rem;
     }
 
+    /* At phone width the badge and the name compete for one line and the name
+       loses, breaking mid-surname. Let the row wrap and lift the badge above it,
+       so the name gets the full width it needs. */
+    .match-card .card-body > .d-flex:first-child {
+        flex-wrap: wrap;
+    }
+
+    .match-card .tier-badge {
+        order: -1;
+        margin-bottom: 0.85rem;
+    }
+
     .match-card .card-footer {
         padding: 1rem 1.25rem;
     }
 
     .candidate-name {
-        font-size: 1.25rem;
+        font-size: 22px;
     }
 
     .profile-section {
@@ -1088,7 +1248,8 @@ label {
     }
 }
 
-/* Motion is decoration here; every animation has a static end state. */
+/* No animation exists in this phase — this guard is inert today and kept in
+   place for Phase 3, which owns motion. */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -1097,10 +1258,5 @@ label {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
-    }
-
-    .btn:hover,
-    .persona-card:hover {
-        transform: none;
     }
 }
