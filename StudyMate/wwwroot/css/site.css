@@ -576,11 +576,55 @@ label {
     color: var(--ink);
 }
 
+/* ----------------------------------------------------------------------------
+   Colour blocks.
+
+   The defining move of the design system: a monochrome editorial frame
+   interrupted by oversized pastel panels. The block replaces elevation — it is
+   a saturated ground, not a shadowed card, so it carries no border. Per the
+   doc's iteration guide, choosing which block-* token a section sits on is the
+   most consequential decision, so each is set explicitly rather than defaulted.
+   ------------------------------------------------------------------------- */
+
+.color-block {
+    background-color: var(--block-lime);
+    color: var(--ink);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xxl);
+    margin-top: var(--space-xxl);
+}
+
+.color-block--cream { background-color: var(--block-cream); }
+.color-block--lime  { background-color: var(--block-lime); }
+.color-block--lilac { background-color: var(--block-lilac); }
+
+/* Below 768px the block bleeds to the viewport edge and drops its corners —
+   the doc's poster effect, rather than a rounded rectangle in a gutter. */
+@media (max-width: 767.98px) {
+    .color-block {
+        border-radius: 0;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        padding: var(--space-xl) var(--space-lg);
+    }
+}
+
+/* The demo panel is a colour block, not a bordered white card. Its persona
+   cards stay canvas white, which is the doc's one sanctioned card-over-a-
+   coloured-section arrangement. */
 .demo-panel {
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius-xl);
-    background-color: var(--canvas);
-    padding: 2rem;
+    background-color: var(--block-cream);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xxl);
+}
+
+@media (max-width: 767.98px) {
+    .demo-panel {
+        border-radius: 0;
+        margin-left: calc(50% - 50vw);
+        margin-right: calc(50% - 50vw);
+        padding: var(--space-xl) var(--space-lg);
+    }
 }
 
 .persona-card {
@@ -596,7 +640,9 @@ label {
     width: 34px;
     height: 34px;
     border-radius: var(--radius-full);
-    background-color: var(--block-lime);
+    /* The step sits on a lime block, so a lime marker would disappear into it —
+       white reads as a punched-out hole in the panel. */
+    background-color: var(--canvas);
     color: var(--ink);
     font-weight: 700;
     font-size: 0.95rem;
