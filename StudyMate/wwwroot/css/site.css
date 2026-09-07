@@ -21,8 +21,14 @@
    as text colour or as a text background. They are marks only: borders, rings,
    rules and glyphs. Error and success text stay ink (#000000).
 
-   Motion: none. This is Phase 2 (restyle only). The `prefers-reduced-motion`
-   guard is kept for whatever Phase 3 adds later; nothing in this file animates.
+   Motion (Phase 3): button press, switch knob, and the swipe-to-decide deck
+   (drag, intent wash, snap-back, fly-out, next-card promotion). Only
+   `transform` and `opacity` are ever animated; durations/easing live as
+   custom properties (--duration-*, --ease-*) alongside the colour tokens
+   below. Every transition/keyframe is suppressed under
+   `prefers-reduced-motion: reduce` (see the guard at the end of this file),
+   and site.js separately branches on the same media query so the swipe deck
+   still functions with motion off.
    ========================================================================= */
 
 :root {
@@ -82,6 +88,25 @@
        change" principle (text-input-focused). Not an animation: it appears
        or does not, with no transition. */
     --focus-ring: 0 0 0 3px var(--ink);
+
+    /* --- motion primitives (Phase 3 — plan's Motion spec, verbatim) -------- */
+    --duration-micro: 120ms;
+    --duration-standard: 200ms;
+    --duration-deliberate: 320ms;
+    /* Not one of the three named durations above — the plan's commit row
+       states fly-out is 260ms explicitly, so it gets its own token rather
+       than being forced onto the nearest named value. */
+    --duration-fly: 260ms;
+    --ease-standard: cubic-bezier(.2, .8, .3, 1);
+    --ease-entrance: cubic-bezier(.16, 1, .3, 1);
+    --ease-exit: cubic-bezier(.4, 0, 1, 1);
+
+    /* Raised shadow layer for the deck card drag (plan D6 + motion spec:
+       "shadow interpolates from resting to raised across the drag"). Cross-
+       faded by opacity on a separate element — box-shadow itself is never
+       animated. Same technique and colour (ink at low opacity) as
+       --shadow-match, just deeper, so the card visibly lifts off the stack. */
+    --shadow-match-raised: 0 18px 38px rgba(0, 0, 0, 0.16);
 }
 
 /* ============================================================================
@@ -329,6 +354,13 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.6rem 1.25rem;
     cursor: pointer;
     border: none;
+    /* Button press (motion spec): tactile confirmation via micro-scale, not
+       a darkened fill — transform only, never a layout property. */
+    transition: transform var(--duration-micro) var(--ease-standard);
+}
+
+.btn:active {
+    transform: scale(0.97);
 }
 
 .btn-primary {
@@ -605,6 +637,16 @@ label {
 .deck-shadow-1 {
     top: 1.5rem;
     width: 92%;
+    /* Next-card promotion (motion spec): sits slightly smaller than the top
+       card until it leaves, then scales up to read as the new top of the
+       stack. Combined with the base class's translateX(-50%) centring —
+       transform is composed, never replaced. */
+    transform: translateX(-50%) scale(0.96);
+}
+
+.deck-shadow-1.deck-shadow-1--promote {
+    transition: transform var(--duration-fly) var(--ease-standard);
+    transform: translateX(-50%) scale(1);
 }
 
 .deck-shadow-2 {
@@ -620,6 +662,10 @@ label {
     background-color: var(--canvas);
     box-shadow: var(--shadow-match);
     overflow: hidden;
+    /* Swipe (site.js): vertical scrolling must still work, so only
+       horizontal panning is claimed here — a predominantly-vertical initial
+       pointer move is left for the browser to scroll, never captured. */
+    touch-action: pan-y;
 }
 
 .match-card .card-body {
@@ -630,6 +676,121 @@ label {
     background-color: var(--canvas);
     border-top: 1px solid var(--hairline);
     padding: 1.1rem 1.75rem;
+}
+
+/* ============================================================================
+   swipe-to-decide deck (Phase 3, site.js) — every element below is created at
+   runtime by site.js; a no-JS visitor never sees any of it and the deck stays
+   fully usable via the two existing forms. Only transform and opacity are
+   ever animated here, per the motion spec.
+   ========================================================================= */
+
+/* Wrapper site.js inserts around .match-card in place of the card itself.
+   It exists only so the raised-drag shadow (below) can bleed outside the
+   card's rounded corners — .match-card keeps `overflow: hidden` so the
+   intent wash respects the radius, and a shadow can't do both from the same
+   box, so it lives on this unclipped sibling wrapper instead. */
+.match-card-wrap {
+    position: relative;
+}
+
+/* Card drag (motion spec): the card follows the pointer 1:1 with no
+   transition while a drag is live; site.js adds a settle class (below)
+   only once the pointer is released. */
+.match-card-wrap.is-dragging .match-card,
+.match-card-wrap.is-dragging .match-card-wash,
+.match-card-wrap.is-dragging .match-card-shadow-raised {
+    transition: none;
+}
+
+/* Snap-back (motion spec): decision declined, 320ms entrance easing back to
+   the origin transform/opacity site.js clears at the same time. */
+.match-card-wrap.match-card-wrap--snap-back .match-card {
+    transition: transform var(--duration-deliberate) var(--ease-entrance);
+}
+
+.match-card-wrap.match-card-wrap--snap-back .match-card-wash,
+.match-card-wrap.match-card-wrap--snap-back .match-card-shadow-raised {
+    transition: opacity var(--duration-deliberate) var(--ease-entrance);
+}
+
+/* Commit (motion spec): decision is irreversible, fly-out over 260ms exit
+   easing. site.js sets the destination transform inline (it depends on the
+   drag direction and the rotation already reached), this just supplies the
+   timing. */
+.match-card-wrap.match-card-wrap--exit .match-card {
+    transition: transform var(--duration-fly) var(--ease-exit);
+}
+
+/* Wash keeps whatever opacity site.js set for the winning/losing direction
+   (it does not force 0 here) — the matched stamp stays visible, confirming
+   the decision, while the card flies off carrying it. */
+.match-card-wrap.match-card-wrap--exit .match-card-wash {
+    transition: opacity var(--duration-fly) var(--ease-exit);
+}
+
+.match-card-wrap.match-card-wrap--exit .match-card-shadow-raised {
+    transition: opacity var(--duration-fly) var(--ease-exit);
+    opacity: 0;
+}
+
+/* Drag shadow (motion spec): resting -> raised shadow, cross-faded by
+   opacity on this dedicated layer rather than animating box-shadow. */
+.match-card-shadow-raised {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-match-raised);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Intent wash + stamp (motion spec): state preview before commit. Both are
+   built by site.js and default to invisible; their opacity is driven
+   directly off drag distance while dragging, so it is not transitioned
+   (see .is-dragging above). Right = Connect (lime), left = Not now (pink) —
+   design-system colours only. */
+.match-card-wash {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.match-card-wash--right {
+    background-color: var(--block-lime);
+    justify-content: flex-start;
+    padding-left: 2rem;
+}
+
+.match-card-wash--left {
+    background-color: var(--block-pink);
+    justify-content: flex-end;
+    padding-right: 2rem;
+}
+
+.match-card-stamp {
+    display: inline-block;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--ink);
+    background-color: var(--canvas);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 1rem;
+}
+
+.match-card-wash--right .match-card-stamp {
+    transform: rotate(-8deg);
+}
+
+.match-card-wash--left .match-card-stamp {
+    transform: rotate(8deg);
 }
 
 .candidate-name {
@@ -998,6 +1159,10 @@ label {
     border-radius: var(--radius-full);
     background-color: var(--canvas);
     border: 1px solid var(--hairline);
+    /* Switch toggle (motion spec): knob translate only, 200ms standard
+       easing. Background/border colour changes on the track itself stay
+       untransitioned — only transform is ever animated. */
+    transition: transform var(--duration-standard) var(--ease-standard);
 }
 
 .seek-toggle input:checked + .seek-track {
@@ -1248,8 +1413,13 @@ label {
     }
 }
 
-/* No animation exists in this phase — this guard is inert today and kept in
-   place for Phase 3, which owns motion. */
+/* Reduced motion (Phase 3): this universal guard collapses every transition
+   and keyframe added anywhere above (buttons, switch knob, deck drag,
+   snap-back, fly-out, next-card promotion) to effectively zero duration.
+   site.js separately checks prefers-reduced-motion itself before it ever
+   applies a rotation, wash opacity or fly-out transform, so the swipe still
+   works with motion off — it just commits or resets without the visual
+   flourish, rather than relying on this guard racing a JS timeout. */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
