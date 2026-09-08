@@ -19,6 +19,8 @@ namespace StudyMate.Data
         public DbSet<UniversityEmailDomain> UniversityEmailDomains { get; set; }
         public DbSet<Block> Blocks { get; set; }
         public DbSet<Report> Reports { get; set; }
+        public DbSet<StudySession> StudySessions { get; set; }
+        public DbSet<SessionParticipant> SessionParticipants { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -83,6 +85,7 @@ namespace StudyMate.Data
             modelBuilder.Entity<Block>().HasIndex(b => new { b.BlockerStudentId, b.BlockedStudentId }).IsUnique();
             modelBuilder.Entity<Block>().ToTable(t => t.HasCheckConstraint("CK_Block_NotSelf", "BlockerStudentId <> BlockedStudentId"));
             modelBuilder.Entity<Report>().ToTable(t => t.HasCheckConstraint("CK_Report_NotSelf", "ReporterStudentId <> ReportedStudentId"));
+            modelBuilder.Entity<SessionParticipant>().HasKey(p => new { p.SessionId, p.StudentId });
 
             // Two navigation paths from StudyRequest to Student, so both relationships are
             // configured explicitly. Both cascade: SQLite has no restriction on multiple

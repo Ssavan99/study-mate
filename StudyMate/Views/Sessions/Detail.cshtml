@@ -1,0 +1,5 @@
+@model StudyMate.Models.StudySession
+@{ ViewData["Title"]="Session details"; var mine=Model.Participants.Any(p=>p.StudentId==User.GetStudentId()); }
+<h1 class="page-title">@Model.Course.Code study session</h1><p class="page-subtitle">@Model.Day · @Model.Block · @Model.Location</p>
+@if(Model.IsCancelled){<p class="alert alert-warning">This session was cancelled by its host.</p>} else {<form asp-action="Join" method="post"><input type="hidden" name="id" value="@Model.Id"/><button class="btn btn-primary" disabled="@mine">Join session</button></form>}
+<h2 class="section-label mt-4">Participants</h2><ul>@foreach(var p in Model.Participants){<li>@p.Student.Name</li>}</ul>
