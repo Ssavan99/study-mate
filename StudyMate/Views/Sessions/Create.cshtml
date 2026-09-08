@@ -1,0 +1,77 @@
+@model StudyMate.Models.StudySession
+@{
+    ViewData["Title"] = "Host a study session";
+    var courses = ViewBag.Courses as IEnumerable<StudyMate.Models.Course> ?? Enumerable.Empty<StudyMate.Models.Course>();
+}
+
+<h1 class="page-title">Host a session</h1>
+<p class="page-subtitle">Pick a course from your schedule and say when and where.</p>
+
+@if (!courses.Any())
+{
+    <div class="rail-card">
+        <div class="section-label mb-2">Nothing to host yet</div>
+        <p class="text-muted small mb-3">
+            Sessions are held for courses on your own schedule, and you have not added
+            any yet. Add a course and you can host a session for it.
+        </p>
+        <a class="btn btn-primary" asp-controller="Profile" asp-action="Edit">Add your courses</a>
+    </div>
+}
+else
+{
+    <form asp-action="Create" method="post" class="rail-card">
+        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+        <div class="form-group">
+            <label asp-for="CourseId" class="section-label">Course</label>
+            <select asp-for="CourseId" class="form-control"
+                    asp-items="@(new SelectList(courses, "CourseId", "Code"))">
+                <option value="">Choose a course</option>
+            </select>
+            <span asp-validation-for="CourseId" class="text-danger small"></span>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label asp-for="Day" class="section-label">Day</label>
+                <select asp-for="Day" class="form-control"
+                        asp-items="@(Html.GetEnumSelectList<DayOfWeek>())"></select>
+            </div>
+            <div class="form-group col-md-6">
+                <label asp-for="Block" class="section-label">Time of day</label>
+                <select asp-for="Block" class="form-control"
+                        asp-items="@(Html.GetEnumSelectList<StudyMate.Models.TimeBlock>())"></select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Location" class="section-label">Where</label>
+            <input asp-for="Location" class="form-control" maxlength="120"
+                   placeholder="Love Library, 3rd floor" />
+            <span asp-validation-for="Location" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Capacity" class="section-label">How many people</label>
+            <input asp-for="Capacity" type="number" min="2" max="8" class="form-control tabular-nums" />
+            <small class="form-text">Counting you. Between 2 and 8.</small>
+            <span asp-validation-for="Capacity" class="text-danger small"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Note" class="section-label">Anything else (optional)</label>
+            <textarea asp-for="Note" class="form-control" rows="2" maxlength="500"
+                      placeholder="Working through the problem set, bring your notes."></textarea>
+        </div>
+
+        <div class="d-flex">
+            <button type="submit" class="btn btn-primary mr-2">Create session</button>
+            <a class="btn btn-outline-secondary" asp-action="Index">Cancel</a>
+        </div>
+    </form>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
