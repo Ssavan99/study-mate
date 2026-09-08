@@ -41,6 +41,7 @@
                             @if (User.HasClaim("is_admin", "true"))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Moderation" asp-action="Index">Moderation</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Index">Dashboard</a></li>
                             }
                         }
                     </ul>
