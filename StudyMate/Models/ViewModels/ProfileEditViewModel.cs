@@ -11,8 +11,8 @@ namespace StudyMate.Models.ViewModels
         [Required, StringLength(80)]
         public string Major { get; set; }
 
-        [Required, StringLength(120)]
-        public string University { get; set; }
+        /// <summary>Affiliation is assigned only after institutional email verification.</summary>
+        public string UniversityName { get; set; }
 
         [Range(1, 5)]
         public int Year { get; set; } = 1;

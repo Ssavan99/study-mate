@@ -32,6 +32,8 @@ namespace StudyMate.Tests
 
             using var context = new AppDbContext(_options);
             context.Database.EnsureCreated();
+            context.Universities.AddRange(TestData.Universities());
+            context.SaveChanges();
 
             context.Courses.AddRange(
                 TestData.Course(1, "CSCE 310"),
@@ -66,7 +68,6 @@ namespace StudyMate.Tests
         {
             Name = "Test Student",
             Major = "Computer Science",
-            University = TestData.DefaultUniversity,
             Year = 2,
             Bio = "Testing",
             PreferredNoise = NoiseLevel.Quiet,

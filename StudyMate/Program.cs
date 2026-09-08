@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using StudyMate.Data;
@@ -88,6 +89,12 @@ var githubClientId = builder.Configuration["Authentication:GitHub:ClientId"];
 var githubClientSecret = builder.Configuration["Authentication:GitHub:ClientSecret"];
 var githubEnabled = !string.IsNullOrWhiteSpace(githubClientId) && !string.IsNullOrWhiteSpace(githubClientSecret);
 
+// Microsoft Entra is the institutional route. It remains entirely optional: a local
+// demo deployment needs neither an app registration nor any hosted email service.
+var microsoftClientId = builder.Configuration["Authentication:Microsoft:ClientId"];
+var microsoftClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"];
+var microsoftEnabled = !string.IsNullOrWhiteSpace(microsoftClientId) && !string.IsNullOrWhiteSpace(microsoftClientSecret);
+
 if (githubEnabled)
 {
     authentication.AddGitHub(options =>
@@ -120,7 +127,7 @@ if (githubEnabled)
                     Name = name,
                     Email = email,
                     Major = string.Empty,
-                    University = string.Empty,
+                    UniversityId = null,
                     Year = 1,
                     IsDemo = false
                 };
@@ -143,7 +150,82 @@ if (githubEnabled)
     });
 }
 
-builder.Services.AddSingleton(new AuthenticationOptionsView(githubEnabled));
+if (microsoftEnabled)
+{
+    authentication.AddOpenIdConnect("Microsoft", options =>
+    {
+        options.Authority = "https://login.microsoftonline.com/common/v2.0";
+        options.ClientId = microsoftClientId;
+        options.ClientSecret = microsoftClientSecret;
+        options.CallbackPath = "/signin-microsoft";
+        options.ResponseType = "code";
+        options.SaveTokens = false;
+        options.Scope.Clear();
+        options.Scope.Add("openid");
+        options.Scope.Add("profile");
+        options.Scope.Add("email");
+
+        options.Events.OnTokenValidated = async context =>
+        {
+            var email = context.Principal?.FindFirst(ClaimTypes.Email)?.Value
+                        ?? context.Principal?.FindFirst("email")?.Value;
+            var verified = string.Equals(context.Principal?.FindFirst("email_verified")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+            // An address is useful only when the provider has explicitly vouched for it.
+            // A personal address authenticated by Microsoft is still not an affiliation.
+            var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+            var domains = await db.UniversityEmailDomains
+                .Include(d => d.University)
+                .AsNoTracking()
+                .ToListAsync();
+            var university = UniversityIdentity.ResolveVerifiedEmail(email, verified, domains);
+            if (university == null)
+            {
+                context.Fail("This Microsoft account does not provide a verified email for a recognised university domain.");
+                return;
+            }
+
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+            var student = await db.Students.FirstOrDefaultAsync(s => s.Email == normalizedEmail);
+            if (student == null)
+            {
+                var hasher = context.HttpContext.RequestServices.GetRequiredService<IPasswordHasher<Student>>();
+                student = new Student
+                {
+                    Name = context.Principal?.FindFirst(ClaimTypes.Name)?.Value ?? normalizedEmail,
+                    Email = normalizedEmail,
+                    Major = string.Empty,
+                    UniversityId = university.UniversityId,
+                    VerifiedEmail = normalizedEmail,
+                    EmailVerifiedAt = DateTime.UtcNow,
+                    Year = 1,
+                    IsDemo = false
+                };
+                student.PasswordHash = hasher.HashPassword(student, Guid.NewGuid().ToString());
+                db.Students.Add(student);
+            }
+            else
+            {
+                student.UniversityId = university.UniversityId;
+                student.VerifiedEmail = normalizedEmail;
+                student.EmailVerifiedAt = DateTime.UtcNow;
+            }
+            await db.SaveChangesAsync();
+
+            var identity = (ClaimsIdentity)context.Principal!.Identity!;
+            foreach (var claim in identity.FindAll(ClaimTypes.NameIdentifier).ToList()) identity.RemoveClaim(claim);
+            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, student.StudentId.ToString()));
+        };
+        options.Events.OnRemoteFailure = context =>
+        {
+            context.HandleResponse();
+            context.Response.Redirect("/Account/ExternalLoginFailed");
+            return Task.CompletedTask;
+        };
+    });
+}
+
+builder.Services.AddSingleton(new AuthenticationOptionsView(githubEnabled, microsoftEnabled));
 
 // Repeated password guesses against a known address are otherwise unlimited.
 builder.Services.AddRateLimiter(options =>
@@ -169,6 +251,13 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 var app = builder.Build();
+
+// EF tooling has an explicit context factory below; do not let its host-discovery
+// probe start a server or seed against a half-migrated schema.
+if (app.Environment.IsEnvironment("DesignTime"))
+{
+    return;
+}
 
 app.UseForwardedHeaders();
 

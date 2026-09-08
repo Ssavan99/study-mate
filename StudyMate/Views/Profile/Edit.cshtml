@@ -143,7 +143,7 @@
             </div>
         </div>
         <p class="text-muted small mt-2 mb-0">
-            This adds the course to @(string.IsNullOrWhiteSpace(Model.University) ? "your university" : Model.University)'s
+            This adds the course to @(string.IsNullOrWhiteSpace(Model.UniversityName) ? "your university" : Model.UniversityName)'s
             list so classmates can pick it too. There's no official catalog to check it
             against, so please enter it the way your school writes it.
         </p>
@@ -166,10 +166,9 @@
                 <span asp-validation-for="Name" class="text-danger small"></span>
             </div>
             <div class="form-group col-md-6">
-                <label asp-for="University"></label>
-                <input asp-for="University" class="form-control" />
-                <span asp-validation-for="University" class="text-danger small"></span>
-                <small class="form-text">You only match with students at the same university.</small>
+                <label>University</label>
+                <input value="@(Model.UniversityName ?? "Not yet verified")" class="form-control" readonly />
+                <small class="form-text">Your university is set by a verified institutional sign-in.</small>
             </div>
         </div>
         <div class="form-row">
