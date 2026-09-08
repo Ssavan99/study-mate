@@ -699,8 +699,16 @@
     // events. Reuse the exact drag state and visual path above; vertical wheels
     // are deliberately left alone so ordinary page scrolling keeps working.
     var wheelDx = 0;
-    var wheelLastDx = 0;
     var wheelLastT = 0;
+    // A trackpad reports far more deltaX than a finger travels, so 1:1 made the deck
+    // commit on a flick that had barely moved. Scaled down, a swipe has to cover
+    // roughly the distance a pointer drag would.
+    var WHEEL_SCALE = 0.35;
+    // A wheel "velocity" is not comparable to a pointer's: the deltas arrive in
+    // bursts, so the pointer's 0.6 px/ms tripped on flicks that had travelled a few
+    // dozen pixels. A wheel commit needs both real speed and real distance.
+    var WHEEL_VELOCITY_THRESHOLD = 1.2;   // px/ms
+    var WHEEL_VELOCITY_MIN_TRAVEL = 0.5;  // fraction of the commit threshold
     var wheelEndTimer = null;
     function finishWheelGesture() {
         wheelEndTimer = null;
@@ -709,7 +717,10 @@
         var v = velocity;
         var behind = draggingBehindEl;
         wheelDx = 0;
-        if (Math.abs(dx) >= threshold || Math.abs(v) > VELOCITY_THRESHOLD) {
+        var farEnough = Math.abs(dx) >= threshold;
+        var flicked = Math.abs(v) > WHEEL_VELOCITY_THRESHOLD
+            && Math.abs(dx) >= threshold * WHEEL_VELOCITY_MIN_TRAVEL;
+        if (farEnough || flicked) {
             commitTop(dx > 0 || (dx === 0 && v >= 0) ? 'right' : 'left', currentRotation);
         } else if (prefersReducedMotion()) {
             top.card.style.transform = '';
@@ -721,10 +732,24 @@
     function onWheel(event) {
         if (isBusy || !top.card || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) { return; }
         event.preventDefault();
+
+        // deltaX is the direction the *content* scrolls, which is the opposite of the
+        // direction the fingers moved: swiping right reports a negative deltaX. Left
+        // as-is the card ran away from the gesture. Negate it so the card follows the
+        // hand, the way it does under a pointer drag.
+        var moved = -event.deltaX * WHEEL_SCALE;
+
         var now = event.timeStamp;
-        if (wheelLastT) { var dt = now - wheelLastT; if (dt > 0) { velocity = (event.deltaX - wheelLastDx) / dt; } }
-        wheelLastT = now; wheelLastDx = event.deltaX;
-        wheelDx += event.deltaX;
+        if (wheelLastT) {
+            var dt = now - wheelLastT;
+            // Distance over time. The previous version differenced consecutive deltas,
+            // which measures change-in-speed rather than speed, and tripped the
+            // velocity commit on gestures that had barely moved.
+            if (dt > 0) { velocity = moved / dt; }
+        }
+        wheelLastT = now;
+
+        wheelDx += moved;
         threshold = top.card.getBoundingClientRect().width * 0.33;
         currentDx = wheelDx; draggingBehindEl = behindCard();
         top.wrap.classList.add('is-dragging'); top.card.style.willChange = 'transform';
