@@ -1,8 +1,8 @@
 @model IReadOnlyList<MatchResult>
 @{
     ViewData["Title"] = "Your matches";
-    var current = Model.FirstOrDefault();
     var remaining = Model.Count;
+    var topThree = Model.Take(3).ToList();
     var upNext = Model.Skip(1).Take(3).ToList();
     var greatCount = Model.Count(m => m.Tier == MatchTier.Great);
 }
@@ -10,130 +10,59 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
     <div>
         <h1 class="page-title">Your matches</h1>
-        @if (remaining > 0)
-        {
-            <p class="page-subtitle mb-0">@remaining to review</p>
-        }
+        <p class="page-subtitle mb-0" id="deck-subtitle"@(remaining == 0 ? " hidden" : "")>@remaining to review</p>
     </div>
     <a class="btn btn-outline-secondary btn-sm" asp-action="List">See all matches</a>
 </div>
 
-@if (TempData["Sent"] != null)
-{
-    <div class="alert alert-success py-2 small">@TempData["Sent"]</div>
-}
+@* Populated by site.js after an AJAX decision carries a message — same spot
+   TempData["Sent"] renders into on a full page load. *@
+<div id="deck-flash" aria-live="polite">
+    @if (TempData["Sent"] != null)
+    {
+        <div class="alert alert-success py-2 small">@TempData["Sent"]</div>
+    }
+</div>
 
-@if (current == null)
+@if (!topThree.Any())
 {
-    <div class="empty-state text-center py-5">
-        <h2 class="h5">You have reviewed everyone for now</h2>
-        <p class="text-muted">
-            There is nobody left in your deck. Adding more courses, switching more of them
-            on, or widening your availability will widen the pool.
-        </p>
-        <a class="btn btn-primary" asp-controller="Profile" asp-action="Edit">Update your profile</a>
-        <a class="btn btn-link" asp-controller="Requests" asp-action="Index">See your requests</a>
-    </div>
+    <partial name="_EmptyDeck" />
 }
 else
 {
-    <div class="deck-layout">
-        <div class="deck">
-            @* Decorative: suggests more candidates queued behind this one. *@
-            @if (remaining > 2) { <div class="deck-shadow deck-shadow-2" aria-hidden="true"></div> }
-            @if (remaining > 1) { <div class="deck-shadow deck-shadow-1" aria-hidden="true"></div> }
-
-            <article class="card match-card">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div class="d-flex align-items-center">
-                            <partial name="_Avatar" model="current.Candidate" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-lg" }' />
-                            <div class="ml-3">
-                                <h2 class="candidate-name">@current.Candidate.Name</h2>
-                                <p class="candidate-meta mb-0">
-                                    @current.Candidate.Major · Year @current.Candidate.Year
-                                </p>
-                            </div>
-                        </div>
-                        @if (current.Tier == MatchTier.Great)
-                        {
-                            <span class="tier-badge tier-badge-great">Great Match</span>
-                        }
-                        else if (current.Tier == MatchTier.Strong)
-                        {
-                            <span class="tier-badge tier-badge-strong">Strong Match</span>
-                        }
-                    </div>
-
-                    @if (!string.IsNullOrWhiteSpace(current.Candidate.Bio))
-                    {
-                        <p class="bio">@current.Candidate.Bio</p>
-                    }
-
-                    <h3 class="section-label">Why you matched</h3>
-                    <ul class="reasons">
-                        @foreach (var reason in current.Reasons)
-                        {
-                            <li class="reason">@reason.Text</li>
-                        }
-                        @if (!current.Reasons.Any())
-                        {
-                            <li class="reason text-muted small">
-                                Nothing in common yet — try switching on more courses in your profile.
-                            </li>
-                        }
-                    </ul>
-                </div>
-
-                <div class="card-footer d-flex">
-                    <form asp-action="Pass" method="post" class="flex-fill mr-2">
-                        <input type="hidden" name="id" value="@current.Candidate.StudentId" />
-                        <button type="submit" class="btn btn-outline-secondary btn-block" data-shortcut="n">
-                            Not now
-                        </button>
-                    </form>
-                    <form asp-action="Connect" method="post" class="flex-fill">
-                        <input type="hidden" name="id" value="@current.Candidate.StudentId" />
-                        <button type="submit" class="btn btn-primary btn-block" data-shortcut="c">
-                            Connect
-                        </button>
-                    </form>
-                    <form asp-controller="Safety" asp-action="Block" method="post" class="ml-2">
-                        <input type="hidden" name="id" value="@current.Candidate.StudentId" />
-                        <button type="submit" class="btn btn-outline-secondary" title="Block this student">Block</button>
-                    </form>
-                </div>
-                <form asp-controller="Safety" asp-action="Report" method="post" class="card-footer pt-0 border-0">
-                    <input type="hidden" name="id" value="@current.Candidate.StudentId" />
-                    <input type="hidden" name="reason" value="Other" />
-                    <button type="submit" class="btn btn-sm btn-link text-muted p-0">Report profile</button>
-                </form>
-            </article>
+    <div class="deck-layout" id="deck-layout">
+        <div class="deck" id="deck" data-remaining="@remaining">
+            <div class="match-stack" id="match-stack">
+                @foreach (var match in topThree)
+                {
+                    <partial name="_MatchCard" model="match" />
+                }
+            </div>
 
             <p class="text-center small mt-3 shortcut-hint">
                 Press <kbd>C</kbd> to connect or <kbd>N</kbd> to skip.
             </p>
         </div>
 
-        <aside class="deck-rail">
+        <aside class="deck-rail" id="deck-rail">
             <div class="rail-card">
                 <div class="section-label mb-2">In your deck</div>
                 <div class="rail-stat">
-                    <span class="rail-stat-value">@remaining</span>
-                    <span class="rail-stat-label">@(remaining == 1 ? "student" : "students") to review</span>
+                    <span class="rail-stat-value" id="rail-remaining">@remaining</span>
+                    <span class="rail-stat-label" id="rail-remaining-label">@(remaining == 1 ? "student" : "students") to review</span>
                 </div>
                 @if (greatCount > 0)
                 {
-                    <div class="rail-stat mt-2">
-                        <span class="rail-stat-value">@greatCount</span>
-                        <span class="rail-stat-label">great @(greatCount == 1 ? "match" : "matches")</span>
+                    <div class="rail-stat mt-2" id="rail-great-wrap">
+                        <span class="rail-stat-value" id="rail-great">@greatCount</span>
+                        <span class="rail-stat-label" id="rail-great-label">great @(greatCount == 1 ? "match" : "matches")</span>
                     </div>
                 }
             </div>
 
             @if (upNext.Any())
             {
-                <div class="rail-card">
+                <div class="rail-card" id="rail-up-next">
                     <div class="section-label mb-2">Up next</div>
                     @foreach (var next in upNext)
                     {
@@ -160,27 +89,11 @@ else
             </div>
         </aside>
     </div>
-}
 
-@section Scripts {
-    <script>
-        // Keyboard shortcuts for reviewing quickly. Ignored while typing in a field.
-        document.addEventListener('keydown', function (event) {
-            if (event.metaKey || event.ctrlKey || event.altKey) return;
-
-            var tag = (event.target.tagName || '').toLowerCase();
-            if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-
-            // Only single letters are valid shortcuts. Interpolating an arbitrary key
-            // such as " or ] into the selector below would raise a SyntaxError.
-            var key = event.key.toLowerCase();
-            if (!/^[a-z]$/.test(key)) return;
-
-            var button = document.querySelector('[data-shortcut="' + key + '"]');
-            if (button) {
-                event.preventDefault();
-                button.click();
-            }
-        });
-    </script>
+    @* Not rendered visibly (a <template>'s content never paints): the source
+       of truth site.js clones from once the client-side stack runs dry, so
+       the "reviewed everyone" copy only ever exists in one place. *@
+    <template id="empty-deck-template">
+        <partial name="_EmptyDeck" />
+    </template>
 }

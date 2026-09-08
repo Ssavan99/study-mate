@@ -41,6 +41,40 @@ namespace StudyMate.Controllers
             return View(results);
         }
 
+        /// <summary>
+        /// One more card for the client-side stack. `exclude` only needs to list the
+        /// StudentIds already rendered on the client — anyone already decided (Pass row,
+        /// StudyRequest row) is filtered out by <see cref="IMatchService.GetMatchesAsync"/>
+        /// already, so this never needs to know about them.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Card([FromQuery] int[] exclude)
+        {
+            var studentId = User.GetStudentId();
+            if (studentId == null) return Forbid();
+
+            var results = await _matches.GetMatchesAsync(studentId.Value);
+
+            var excludeSet = exclude == null || exclude.Length == 0
+                ? null
+                : new HashSet<int>(exclude);
+
+            var next = excludeSet == null
+                ? results.FirstOrDefault()
+                : results.FirstOrDefault(m => !excludeSet.Contains(m.Candidate.StudentId));
+
+            if (next == null)
+            {
+                return NoContent();
+            }
+
+            return PartialView("_MatchCard", next);
+        }
+
+        /// <summary>True when the request came from the deck's own background fetch rather
+        /// than a real (or no-JS) form submission — the two cases answer differently.</summary>
+        private bool IsAjax() => Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Connect(int id)
@@ -67,13 +101,22 @@ namespace StudyMate.Controllers
 
             if (incoming)
             {
-                TempData["Sent"] = "They already asked you — their request is waiting in Requests.";
+                var alreadyWaitingMessage = "They already asked you — their request is waiting in Requests.";
+
+                if (IsAjax())
+                {
+                    var remainingOnIncoming = (await _matches.GetMatchesAsync(studentId.Value)).Count;
+                    return Json(new { ok = true, message = alreadyWaitingMessage, remaining = remainingOnIncoming });
+                }
+
+                TempData["Sent"] = alreadyWaitingMessage;
                 return RedirectToAction(nameof(Index));
             }
 
             var alreadySent = await _db.StudyRequests.AnyAsync(r =>
                 r.FromStudentId == studentId.Value && r.ToStudentId == id);
 
+            string sentMessage = null;
             if (!alreadySent)
             {
                 _db.StudyRequests.Add(new StudyRequest
@@ -82,7 +125,18 @@ namespace StudyMate.Controllers
                     ToStudentId = id
                 });
                 await _db.SaveChangesAsync();
-                TempData["Sent"] = "Study request sent.";
+                sentMessage = "Study request sent.";
+            }
+
+            if (IsAjax())
+            {
+                var remaining = (await _matches.GetMatchesAsync(studentId.Value)).Count;
+                return Json(new { ok = true, message = sentMessage, remaining });
+            }
+
+            if (sentMessage != null)
+            {
+                TempData["Sent"] = sentMessage;
             }
 
             return RedirectToAction(nameof(Index));
@@ -107,6 +161,12 @@ namespace StudyMate.Controllers
             {
                 _db.Passes.Add(new Pass { StudentId = studentId.Value, PassedStudentId = id });
                 await _db.SaveChangesAsync();
+            }
+
+            if (IsAjax())
+            {
+                var remaining = (await _matches.GetMatchesAsync(studentId.Value)).Count;
+                return Json(new { ok = true, message = (string)null, remaining });
             }
 
             return RedirectToAction(nameof(Index));

@@ -9,14 +9,22 @@
     <h2 class="section-label">Waiting for your answer</h2>
     @if (!Model.Incoming.Any())
     {
-        <p class="text-muted small">Nobody has asked to study with you yet.</p>
+        <div class="empty-state text-center py-4">
+            <p class="mb-1"><strong>Nobody has asked to study with you yet.</strong></p>
+            <p class="text-muted small mb-0">
+                Incoming requests will show up here as soon as someone wants to connect.
+            </p>
+        </div>
     }
     else
     {
         <ul class="list-unstyled request-list">
+            @{ var incomingIndex = 0; }
             @foreach (var request in Model.Incoming)
             {
-                <li class="request-row d-flex justify-content-between align-items-center">
+                var incomingDelay = incomingIndex < 12 ? incomingIndex : 11;
+                incomingIndex++;
+                <li class="request-row stagger-item d-flex justify-content-between align-items-center" style="--stagger-index: @incomingDelay">
                     <div class="d-flex align-items-center">
                         <partial name="_Avatar" model="request.FromStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
                         <div class="ml-2">
@@ -46,23 +54,43 @@
     <h2 class="section-label">Your study partners</h2>
     @if (!Model.Connections.Any())
     {
-        <p class="text-muted small">No connections yet. Accepted requests appear here.</p>
+        <div class="empty-state text-center py-4">
+            <p class="mb-1"><strong>No connections yet.</strong></p>
+            <p class="text-muted small mb-2">Accepted requests appear here once someone says yes.</p>
+            <a class="btn btn-outline-secondary btn-sm" asp-controller="Matches" asp-action="Index">Review your matches</a>
+        </div>
     }
     else
     {
         <ul class="list-unstyled request-list">
+            @{ var connectionIndex = 0; }
             @foreach (var connection in Model.Connections)
             {
                 var partner = Model.Partner(connection);
-                <li class="request-row d-flex justify-content-between align-items-center">
-                    <div class="d-flex align-items-center">
-                        <partial name="_Avatar" model="partner" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
-                        <div class="ml-2">
-                            <strong>@partner.Name</strong>
-                            <span class="text-muted small d-block">@partner.Major</span>
+                var suggestions = Model.SuggestionsFor(connection);
+                var connectionDelay = connectionIndex < 12 ? connectionIndex : 11;
+                connectionIndex++;
+                <li class="request-row stagger-item" style="--stagger-index: @connectionDelay">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <partial name="_Avatar" model="partner" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
+                            <div class="ml-2">
+                                <strong>@partner.Name</strong>
+                                <span class="text-muted small d-block">@partner.Major</span>
+                            </div>
                         </div>
+                        <a class="btn btn-sm btn-outline-secondary" href="mailto:@partner.Email">Email</a>
                     </div>
-                    <a class="btn btn-sm btn-outline-secondary" href="mailto:@partner.Email">Email</a>
+                    @if (suggestions.Any())
+                    {
+                        <h3 class="section-label mt-3">Suggested study times</h3>
+                        <ul class="reasons">
+                            @foreach (var suggestion in suggestions)
+                            {
+                                <li class="reason">@suggestion.Text</li>
+                            }
+                        </ul>
+                    }
                 </li>
             }
         </ul>
@@ -73,14 +101,21 @@
     <h2 class="section-label">Requests you sent</h2>
     @if (!Model.Outgoing.Any())
     {
-        <p class="text-muted small">You have not sent any requests yet.</p>
+        <div class="empty-state text-center py-4">
+            <p class="mb-1"><strong>You have not sent any requests yet.</strong></p>
+            <p class="text-muted small mb-2">Connect with a match and it will show up here.</p>
+            <a class="btn btn-outline-secondary btn-sm" asp-controller="Matches" asp-action="Index">Find a match</a>
+        </div>
     }
     else
     {
         <ul class="list-unstyled request-list">
+            @{ var outgoingIndex = 0; }
             @foreach (var request in Model.Outgoing)
             {
-                <li class="request-row d-flex justify-content-between align-items-center">
+                var outgoingDelay = outgoingIndex < 12 ? outgoingIndex : 11;
+                outgoingIndex++;
+                <li class="request-row stagger-item d-flex justify-content-between align-items-center" style="--stagger-index: @outgoingDelay">
                     <div class="d-flex align-items-center">
                         <partial name="_Avatar" model="request.ToStudent" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
                         <div class="ml-2">

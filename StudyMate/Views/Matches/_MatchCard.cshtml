@@ -1,0 +1,95 @@
+@model MatchResult
+@*
+    One card in the review deck. Rendered server-side for Index (top 3, stacked)
+    and for MatchesController.Card (one replacement card, fetched by site.js as
+    the stack is worked through). Every attribute the swipe deck's JS reads
+    lives on the <article> itself so a freshly-fetched card needs no extra
+    wiring beyond being dropped into the DOM.
+
+    data-student-id / data-tier: read by site.js to build the `exclude` list
+    and to keep the rail's "great match" count in sync locally.
+
+    The two <form> posts below are real, independent submissions with their
+    own antiforgery token (added automatically by the form tag helper) — a
+    no-JS visitor connects or passes exactly as if this were a full-page deck.
+    site.js intercepts clicks on the TOP card's buttons only; it never removes
+    or disables these controls.
+*@
+<article class="card match-card" data-student-id="@Model.Candidate.StudentId" data-tier="@Model.Tier">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="d-flex align-items-center">
+                <partial name="_Avatar" model="Model.Candidate" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-lg" }' />
+                <div class="ml-3">
+                    <h2 class="candidate-name">@Model.Candidate.Name</h2>
+                    <p class="candidate-meta mb-0">
+                        @Model.Candidate.Major · Year @Model.Candidate.Year
+                    </p>
+                </div>
+            </div>
+            @if (Model.Tier == MatchTier.Great)
+            {
+                <span class="tier-badge tier-badge-great">Great Match</span>
+            }
+            else if (Model.Tier == MatchTier.Strong)
+            {
+                <span class="tier-badge tier-badge-strong">Strong Match</span>
+            }
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Candidate.Bio))
+        {
+            <p class="bio">@Model.Candidate.Bio</p>
+        }
+
+        <h3 class="section-label">Why you matched</h3>
+        <ul class="reasons">
+            @foreach (var reason in Model.Reasons)
+            {
+                <li class="reason">@reason.Text</li>
+            }
+            @if (!Model.Reasons.Any())
+            {
+                <li class="reason text-muted small">
+                    Nothing in common yet — try switching on more courses in your profile.
+                </li>
+            }
+        </ul>
+    </div>
+
+    <div class="card-footer d-flex">
+        <form asp-action="Pass" method="post" class="flex-fill mr-2" data-decision="pass">
+            <input type="hidden" name="id" value="@Model.Candidate.StudentId" />
+            <button type="submit" class="btn btn-outline-secondary btn-block" data-shortcut="n">
+                Not now
+            </button>
+        </form>
+        <form asp-action="Connect" method="post" class="flex-fill" data-decision="connect">
+            <input type="hidden" name="id" value="@Model.Candidate.StudentId" />
+            <button type="submit" class="btn btn-primary btn-block" data-shortcut="c">
+                Connect
+            </button>
+        </form>
+    </div>
+
+    @* Safety controls sit below the decision row, not inside it: blocking and
+       reporting are rare, deliberate actions and should not compete with the two
+       choices this card exists to offer. They stay ordinary form posts — the
+       swipe script only ever intercepts forms carrying data-decision, so these
+       are untouched by it and work with JavaScript off. *@
+    <div class="card-footer card-footer-safety d-flex">
+        <form asp-controller="Safety" asp-action="Block" method="post" class="mr-3">
+            <input type="hidden" name="id" value="@Model.Candidate.StudentId" />
+            <button type="submit" class="btn btn-link btn-sm safety-link">
+                Block @Model.Candidate.Name.Split(' ')[0]
+            </button>
+        </form>
+        <form asp-controller="Safety" asp-action="Report" method="post">
+            <input type="hidden" name="id" value="@Model.Candidate.StudentId" />
+            <input type="hidden" name="reason" value="Other" />
+            <button type="submit" class="btn btn-link btn-sm safety-link">
+                Report profile
+            </button>
+        </form>
+    </div>
+</article>

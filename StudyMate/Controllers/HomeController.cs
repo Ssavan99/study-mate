@@ -34,6 +34,32 @@ namespace StudyMate.Controllers
 
         public IActionResult Privacy() => View();
 
+        /// <summary>
+        /// Re-executed by UseStatusCodePagesWithReExecute (see Program.cs) whenever a
+        /// request ends in a bare status code with no body — a 404 from routing, or a
+        /// NotFound() from a controller — so it gets the same designed page as any
+        /// other error instead of the host's blank default response.
+        ///
+        /// Deliberately NOT named StatusCode: that would hide
+        /// ControllerBase.StatusCode(int), so any call to the framework helper from
+        /// this controller would silently invoke the action instead.
+        /// </summary>
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult HttpStatus(int code)
+        {
+            Response.StatusCode = code;
+
+            if (code == 404)
+            {
+                return View("NotFound");
+            }
+
+            return View("Error", new ErrorViewModel
+            {
+                RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier
+            });
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

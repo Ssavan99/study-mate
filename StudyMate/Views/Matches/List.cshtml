@@ -13,7 +13,15 @@
 
 @if (!Model.Any())
 {
-    <p class="text-muted">No candidates left to review.</p>
+    <div class="empty-state text-center py-5">
+        <h2 class="h5">No candidates left to review</h2>
+        <p class="text-muted">
+            There is nobody left in your deck right now. Adding more courses, switching more
+            of them on, or widening your availability will bring in new matches.
+        </p>
+        <a class="btn btn-primary" asp-controller="Profile" asp-action="Edit">Update your profile</a>
+        <a class="btn btn-link" asp-action="Index">Back to the deck</a>
+    </div>
 }
 else
 {
@@ -32,14 +40,15 @@ else
                 @for (var i = 0; i < Model.Count; i++)
                 {
                     var match = Model[i];
-                    <tr>
+                    var rowDelay = i < 12 ? i : 11;
+                    <tr class="stagger-item" style="--stagger-index: @rowDelay">
                         <td class="text-muted">@(i + 1)</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <partial name="_Avatar" model="match.Candidate" view-data='new ViewDataDictionary(ViewData) { ["Size"] = "avatar-sm" }' />
                                 <div class="ml-2">
                                     <strong>@match.Candidate.Name</strong><br />
-                                    <span class="text-muted small">@match.Candidate.Major · Year @match.Candidate.Year</span>
+                                    <span class="text-muted small tabular-nums">@match.Candidate.Major · Year @match.Candidate.Year</span>
                                 </div>
                             </div>
                         </td>

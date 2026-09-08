@@ -66,6 +66,7 @@ namespace StudyMate.Data
 
             await db.SaveChangesAsync();
             await SeedRequestsAsync(db, students, random);
+            await SeedSessionsAsync(db, students, random);
 
             await transaction.CommitAsync();
         }
@@ -448,6 +449,89 @@ namespace StudyMate.Data
                 CreatedAt = DateTime.UtcNow.AddDays(-random.Next(1, 30)),
                 RespondedAt = respondedAt
             });
+        }
+
+
+        /// <summary>
+        /// A handful of study sessions so the sessions page is populated the moment the
+        /// app starts, the same reason the students, courses and requests are seeded.
+        /// Hosts are drawn from students who actually have courses and availability, and
+        /// each session is placed on a day and block its host is genuinely free in, so
+        /// the seeded data does not contradict the availability the app matches on.
+        /// </summary>
+        private static async Task SeedSessionsAsync(AppDbContext db, List<Student> students, Random random)
+        {
+            var locations = new[]
+            {
+                "Love Library, 3rd floor",
+                "Union, back study room",
+                "Avery Hall lobby",
+                "Coffee house on 14th",
+                "Science library, quiet side"
+            };
+
+            var notes = new[]
+            {
+                "Working through the problem set — bring your notes.",
+                "Reviewing before the midterm.",
+                "Mostly quiet, we just want company while we read.",
+                "Going over lecture slides together.",
+                ""
+            };
+
+            var hosts = students
+                .Where(s => s.Enrollments != null && s.Enrollments.Any()
+                            && s.Availability != null && s.Availability.Any())
+                .OrderBy(_ => random.Next())
+                .Take(8)
+                .ToList();
+
+            foreach (var host in hosts)
+            {
+                var enrolment = host.Enrollments.ElementAt(random.Next(host.Enrollments.Count));
+                var slot = host.Availability.ElementAt(random.Next(host.Availability.Count));
+
+                var session = new StudySession
+                {
+                    CourseId = enrolment.CourseId,
+                    HostStudentId = host.StudentId,
+                    Day = slot.Day,
+                    Block = slot.Block,
+                    Capacity = random.Next(3, 7),
+                    Location = Pick(random, locations),
+                    Note = Pick(random, notes),
+                    CreatedAt = DateTime.UtcNow.AddDays(-random.Next(1, 14)),
+                    IsCancelled = false
+                };
+
+                db.StudySessions.Add(session);
+                await db.SaveChangesAsync();
+
+                db.SessionParticipants.Add(new SessionParticipant
+                {
+                    SessionId = session.Id,
+                    StudentId = host.StudentId
+                });
+
+                // A couple of other students from the same university join, so capacity
+                // reads as partly filled rather than every session sitting at 1 of 5.
+                var joiners = students
+                    .Where(s => s.StudentId != host.StudentId && s.UniversityId == host.UniversityId)
+                    .OrderBy(_ => random.Next())
+                    .Take(random.Next(0, Math.Min(3, session.Capacity - 1)))
+                    .ToList();
+
+                foreach (var joiner in joiners)
+                {
+                    db.SessionParticipants.Add(new SessionParticipant
+                    {
+                        SessionId = session.Id,
+                        StudentId = joiner.StudentId
+                    });
+                }
+            }
+
+            await db.SaveChangesAsync();
         }
 
         private static string Pick(Random random, string[] values) => values[random.Next(values.Length)];

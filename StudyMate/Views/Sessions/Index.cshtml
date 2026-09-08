@@ -1,5 +1,43 @@
 @model IReadOnlyList<StudyMate.Models.StudySession>
-@{ ViewData["Title"]="Study sessions"; }
-<h1 class="page-title">Study sessions</h1><p class="page-subtitle">Sessions for courses on your schedule.</p>
-@if(!Model.Any()){<p class="text-muted">No sessions for your courses yet.</p>}
-@foreach(var session in Model){<article class="rail-card mb-3"><div class="section-label">@session.Course.Code · @session.Day @session.Block</div><strong>@session.Location</strong><span class="text-muted small d-block">@session.Participants.Count / @session.Capacity joined</span><a asp-action="Detail" asp-route-id="@session.Id" class="btn btn-sm btn-outline-secondary mt-2">Details</a></article>}
+@{ ViewData["Title"] = "Study sessions"; }
+
+<div class="d-flex justify-content-between align-items-start flex-wrap mb-4">
+    <div>
+        <h1 class="page-title">Study sessions</h1>
+        <p class="page-subtitle mb-0">Sessions for courses on your schedule, soonest first.</p>
+    </div>
+    <a class="btn btn-primary" asp-action="Create">Host a session</a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="rail-card empty-state">
+        <div class="section-label mb-2">Nothing scheduled yet</div>
+        <p class="text-muted small mb-3">
+            Nobody has set up a session for your courses. Hosting one is the fastest way
+            to find people — pick a course, a time you are already free, and somewhere to
+            meet.
+        </p>
+        <a class="btn btn-primary" asp-action="Create">Host the first one</a>
+    </div>
+}
+else
+{
+    foreach (var session in Model)
+    {
+        var full = session.Participants.Count >= session.Capacity;
+        <article class="rail-card mb-3">
+            <div class="section-label">@session.Course.Code · @session.Day @session.Block</div>
+            <strong>@session.Location</strong>
+            <span class="text-muted small d-block tabular-nums">
+                @session.Participants.Count / @session.Capacity joined@(full ? " · full" : "")
+            </span>
+            @if (!string.IsNullOrWhiteSpace(session.Note))
+            {
+                <p class="text-muted small mb-0 mt-2">@session.Note</p>
+            }
+            <a asp-action="Detail" asp-route-id="@session.Id"
+               class="btn btn-sm btn-outline-secondary mt-2">Details</a>
+        </article>
+    }
+}
