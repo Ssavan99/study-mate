@@ -753,7 +753,9 @@ label {
        by the card's shadow and hairline together, not by the surface. */
     background-color: var(--surface-soft);
     border-radius: var(--radius-lg);
-    padding: 1.5rem;
+    padding: 2.5rem;
+    overflow: hidden;
+    overscroll-behavior-x: contain;
 }
 
 /* ============================================================================

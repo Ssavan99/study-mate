@@ -12,6 +12,7 @@ namespace StudyMate.Tests
         [InlineData("  CsCe 310  ", "CSCE 310")]
         [InlineData("MA 1", "MA 1")]
         [InlineData("PSYC 4999", "PSYC 4999")]
+        [InlineData("ECON 211H", "ECON 211H")]
         public void ValidCodes_NormalizeToTheSameForm(string input, string expected)
         {
             Assert.Equal(expected, CourseCodeParser.Normalize(input));

@@ -131,7 +131,7 @@ namespace StudyMate.Controllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddCourse(string code, string title)
+        public async Task<IActionResult> AddCourse(string code, string title = null)
         {
             var studentId = User.GetStudentId();
             if (studentId == null) return Forbid();
@@ -155,24 +155,7 @@ namespace StudyMate.Controllers
             var course = await _db.Courses
                 .FirstOrDefaultAsync(c => c.UniversityId == student.UniversityId.Value && c.Code == normalizedCode);
 
-            if (course == null)
-            {
-                if (string.IsNullOrWhiteSpace(title))
-                {
-                    TempData["CourseError"] = $"{normalizedCode} isn't in your university's list yet — add a title to create it.";
-                    return RedirectToAction(nameof(Edit));
-                }
-
-                course = new Course
-                {
-                    Code = normalizedCode,
-                    Title = title.Trim(),
-                    Department = normalizedCode.Split(' ')[0],
-                    UniversityId = student.UniversityId.Value
-                };
-                _db.Courses.Add(course);
-                await _db.SaveChangesAsync();
-            }
+            if (course == null) { TempData["CourseError"] = "That course is not in the catalog. Request it for review instead."; return RedirectToAction(nameof(Edit)); }
 
             var alreadyEnrolled = await _db.Enrollments
                 .AnyAsync(e => e.StudentId == studentId.Value && e.CourseId == course.CourseId);
@@ -193,6 +176,17 @@ namespace StudyMate.Controllers
 
             TempData["Saved"] = $"Added {course.Code} to your schedule.";
             return RedirectToAction(nameof(Edit));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> RequestCourse(string code, string title)
+        {
+            var studentId = User.GetStudentId(); if (studentId == null) return Forbid();
+            var student = await _db.Students.FindAsync(studentId.Value); if (student?.UniversityId == null) return Forbid();
+            var normalized = CourseCodeParser.Normalize(code);
+            if (normalized == null || string.IsNullOrWhiteSpace(title)) { TempData["CourseError"] = "Enter a valid course code and title."; return RedirectToAction(nameof(Edit)); }
+            _db.CourseRequests.Add(new CourseRequest { StudentId = studentId.Value, UniversityId = student.UniversityId.Value, Code = normalized, Title = title.Trim() });
+            await _db.SaveChangesAsync(); TempData["Saved"] = "Course request sent for review."; return RedirectToAction(nameof(Edit));
         }
 
         [HttpPost]

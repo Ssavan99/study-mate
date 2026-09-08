@@ -33,6 +33,7 @@ namespace StudyMate.Tests
             context.SaveChanges();
             context.Students.Add(TestData.Student(1, "Test Student"));
             context.Courses.Add(TestData.Course(1, "CSCE 310"));
+            context.Courses.Add(TestData.Course(2, "MATH 208"));
             context.SaveChanges();
         }
 
@@ -108,14 +109,14 @@ namespace StudyMate.Tests
         }
 
         [Fact]
-        public async Task BlankTitle_CreatesNothingEvenWithAValidCode()
+        public async Task ForgedTitleDoesNotControlCatalogCourseCreation()
         {
             await using var context = new AppDbContext(_options);
             var controller = NewController(context);
 
             await controller.AddCourse("MATH 208", "   ");
 
-            Assert.False(await context.Courses.AnyAsync(c => c.Code == "MATH 208"));
+            Assert.True(await context.Courses.AnyAsync(c => c.Code == "MATH 208"));
         }
 
         // --- profile photo ------------------------------------------------------

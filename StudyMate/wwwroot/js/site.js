@@ -505,7 +505,7 @@
         }
 
         outgoingWrap.classList.add('match-card-wrap--exit');
-        var offscreenX = direction === 'right' ? '160vw' : '-160vw';
+        var offscreenX = direction === 'right' ? '115%' : '-115%';
         // Continue the rotation the card already reached rather than
         // inventing a new fly-off angle — the fling reads as a continuation
         // of the drag, not a snap to a different value.
@@ -676,6 +676,44 @@
         document.addEventListener('pointercancel', onPointerUp);
     }
 
+    // Trackpads expose a two-finger horizontal swipe as a sequence of wheel
+    // events. Reuse the exact drag state and visual path above; vertical wheels
+    // are deliberately left alone so ordinary page scrolling keeps working.
+    var wheelDx = 0;
+    var wheelLastDx = 0;
+    var wheelLastT = 0;
+    var wheelEndTimer = null;
+    function finishWheelGesture() {
+        wheelEndTimer = null;
+        if (!wheelDx || isBusy || !top.card) { wheelDx = 0; return; }
+        var dx = wheelDx;
+        var v = velocity;
+        var behind = draggingBehindEl;
+        wheelDx = 0;
+        if (Math.abs(dx) >= threshold || Math.abs(v) > VELOCITY_THRESHOLD) {
+            commitTop(dx > 0 || (dx === 0 && v >= 0) ? 'right' : 'left', currentRotation);
+        } else if (prefersReducedMotion()) {
+            top.card.style.transform = '';
+            top.shadowRaised.style.opacity = '0'; top.rightWash.style.opacity = '0'; top.leftWash.style.opacity = '0';
+        } else {
+            isBusy = true; snapBack(behind);
+        }
+    }
+    function onWheel(event) {
+        if (isBusy || !top.card || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) { return; }
+        event.preventDefault();
+        var now = event.timeStamp;
+        if (wheelLastT) { var dt = now - wheelLastT; if (dt > 0) { velocity = (event.deltaX - wheelLastDx) / dt; } }
+        wheelLastT = now; wheelLastDx = event.deltaX;
+        wheelDx += event.deltaX;
+        threshold = top.card.getBoundingClientRect().width * 0.33;
+        currentDx = wheelDx; draggingBehindEl = behindCard();
+        top.wrap.classList.add('is-dragging'); top.card.style.willChange = 'transform';
+        scheduleDragVisuals();
+        if (wheelEndTimer) { window.clearTimeout(wheelEndTimer); }
+        wheelEndTimer = window.setTimeout(finishWheelGesture, 120);
+    }
+
     // Wraps whichever card is now on top with the drag affordances (built at
     // runtime, never in the .cshtml) and wires up its pointer/button
     // handlers. Called once at init and again every time a card is promoted.
@@ -729,6 +767,7 @@
         };
 
         cardEl.addEventListener('pointerdown', onPointerDown);
+        cardEl.addEventListener('wheel', onWheel, { passive: false });
 
         function onControlClick(direction) {
             return function (event) {
@@ -973,4 +1012,3 @@
         window.setTimeout(settle, 1500);
     });
 })();
-
