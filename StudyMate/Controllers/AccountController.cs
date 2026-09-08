@@ -211,6 +211,7 @@ namespace StudyMate.Controllers
                 new(ClaimTypes.Name, student.Name),
                 new(ClaimTypes.Email, student.Email)
             };
+            if (student.IsAdmin) claims.Add(new Claim("is_admin", "true"));
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 

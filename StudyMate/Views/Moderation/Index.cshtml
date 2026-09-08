@@ -1,0 +1,18 @@
+@model IReadOnlyList<StudyMate.Models.Report>
+@{ ViewData["Title"] = "Moderation"; }
+<h1 class="page-title">Moderation queue</h1>
+<p class="page-subtitle">Reports are reviewed here. This queue is visible only to administrators.</p>
+@if (!Model.Any()) { <p class="text-muted">No open reports.</p> }
+@foreach (var report in Model)
+{
+    <article class="rail-card mb-3">
+        <div class="section-label">@report.Reason · @report.CreatedAt.ToString("d MMM")</div>
+        @if (!string.IsNullOrWhiteSpace(report.Detail)) { <p class="mb-2">@report.Detail</p> }
+        <form asp-action="Review" method="post" class="form-inline">
+            <input type="hidden" name="id" value="@report.Id" />
+            <input name="note" class="form-control form-control-sm mr-2" maxlength="1000" placeholder="Reviewer note" />
+            <button name="suspend" value="false" class="btn btn-sm btn-outline-secondary mr-2">Dismiss</button>
+            <button name="suspend" value="true" class="btn btn-sm btn-primary">Suspend student</button>
+        </form>
+    </article>
+}
