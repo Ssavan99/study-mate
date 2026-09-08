@@ -29,6 +29,11 @@
     var VELOCITY_THRESHOLD = 0.6; // px/ms
     var ROTATE_FACTOR = 0.04;     // deg per px of horizontal drag
     var ROTATE_CAP = 12;          // deg
+    // The intent wash tints the card; it must not bury it. Ramping all the way to
+    // opaque meant that at the commit threshold you could no longer read who you
+    // were about to connect with — the stamp carries the signal, the wash only
+    // colours it.
+    var WASH_MAX_OPACITY = 0.42;
     var FLY_MS = 260;             // keep in sync with --duration-fly in site.css
     var SNAP_MS = 320;            // keep in sync with --duration-deliberate in site.css
 
@@ -396,8 +401,10 @@
             top.shadowRaised.style.opacity = '0';
 
             var past = threshold > 0 && Math.abs(dx) >= threshold;
-            top.rightWash.style.opacity = (past && dx > 0) ? '1' : '0';
-            top.leftWash.style.opacity = (past && dx < 0) ? '1' : '0';
+            top.rightWash.style.opacity = (past && dx > 0) ? String(WASH_MAX_OPACITY) : '0';
+            top.leftWash.style.opacity = (past && dx < 0) ? String(WASH_MAX_OPACITY) : '0';
+            top.rightWash.stampLayer.style.opacity = (past && dx > 0) ? '1' : '0';
+            top.leftWash.stampLayer.style.opacity = (past && dx < 0) ? '1' : '0';
             return;
         }
 
@@ -408,14 +415,20 @@
         top.shadowRaised.style.opacity = String(progress);
 
         if (dx > 0) {
-            top.rightWash.style.opacity = String(progress);
+            top.rightWash.style.opacity = String(progress * WASH_MAX_OPACITY);
+            top.rightWash.stampLayer.style.opacity = String(progress);
             top.leftWash.style.opacity = '0';
+            top.leftWash.stampLayer.style.opacity = '0';
         } else if (dx < 0) {
-            top.leftWash.style.opacity = String(progress);
+            top.leftWash.style.opacity = String(progress * WASH_MAX_OPACITY);
+            top.leftWash.stampLayer.style.opacity = String(progress);
             top.rightWash.style.opacity = '0';
+            top.rightWash.stampLayer.style.opacity = '0';
         } else {
             top.rightWash.style.opacity = '0';
             top.leftWash.style.opacity = '0';
+            top.rightWash.stampLayer.style.opacity = '0';
+            top.leftWash.stampLayer.style.opacity = '0';
         }
 
         // Tinder-like stack feel: the card behind rises toward full size in
@@ -505,13 +518,15 @@
         }
 
         outgoingWrap.classList.add('match-card-wrap--exit');
-        var offscreenX = direction === 'right' ? '160vw' : '-160vw';
+        var offscreenX = direction === 'right' ? '115%' : '-115%';
         // Continue the rotation the card already reached rather than
         // inventing a new fly-off angle — the fling reads as a continuation
         // of the drag, not a snap to a different value.
         outgoingCard.style.transform = 'translateX(' + offscreenX + ') rotate(' + rotation + 'deg)';
-        top.rightWash.style.opacity = direction === 'right' ? '1' : '0';
-        top.leftWash.style.opacity = direction === 'left' ? '1' : '0';
+        top.rightWash.style.opacity = direction === 'right' ? String(WASH_MAX_OPACITY) : '0';
+        top.leftWash.style.opacity = direction === 'left' ? String(WASH_MAX_OPACITY) : '0';
+        top.rightWash.stampLayer.style.opacity = direction === 'right' ? '1' : '0';
+        top.leftWash.stampLayer.style.opacity = direction === 'left' ? '1' : '0';
 
         if (behind) {
             stackEl.classList.add('is-committing');
@@ -533,6 +548,8 @@
         top.shadowRaised.style.opacity = '0';
         top.rightWash.style.opacity = '0';
         top.leftWash.style.opacity = '0';
+        top.rightWash.stampLayer.style.opacity = '0';
+        top.leftWash.stampLayer.style.opacity = '0';
 
         if (behind) {
             stackEl.classList.add('is-settling');
@@ -635,6 +652,8 @@
                 top.shadowRaised.style.opacity = '0';
                 top.rightWash.style.opacity = '0';
                 top.leftWash.style.opacity = '0';
+                top.rightWash.stampLayer.style.opacity = '0';
+                top.leftWash.stampLayer.style.opacity = '0';
             }
             return;
         }
@@ -676,6 +695,44 @@
         document.addEventListener('pointercancel', onPointerUp);
     }
 
+    // Trackpads expose a two-finger horizontal swipe as a sequence of wheel
+    // events. Reuse the exact drag state and visual path above; vertical wheels
+    // are deliberately left alone so ordinary page scrolling keeps working.
+    var wheelDx = 0;
+    var wheelLastDx = 0;
+    var wheelLastT = 0;
+    var wheelEndTimer = null;
+    function finishWheelGesture() {
+        wheelEndTimer = null;
+        if (!wheelDx || isBusy || !top.card) { wheelDx = 0; return; }
+        var dx = wheelDx;
+        var v = velocity;
+        var behind = draggingBehindEl;
+        wheelDx = 0;
+        if (Math.abs(dx) >= threshold || Math.abs(v) > VELOCITY_THRESHOLD) {
+            commitTop(dx > 0 || (dx === 0 && v >= 0) ? 'right' : 'left', currentRotation);
+        } else if (prefersReducedMotion()) {
+            top.card.style.transform = '';
+            top.shadowRaised.style.opacity = '0'; top.rightWash.style.opacity = '0'; top.leftWash.style.opacity = '0'; top.rightWash.stampLayer.style.opacity = '0'; top.leftWash.stampLayer.style.opacity = '0';
+        } else {
+            isBusy = true; snapBack(behind);
+        }
+    }
+    function onWheel(event) {
+        if (isBusy || !top.card || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) { return; }
+        event.preventDefault();
+        var now = event.timeStamp;
+        if (wheelLastT) { var dt = now - wheelLastT; if (dt > 0) { velocity = (event.deltaX - wheelLastDx) / dt; } }
+        wheelLastT = now; wheelLastDx = event.deltaX;
+        wheelDx += event.deltaX;
+        threshold = top.card.getBoundingClientRect().width * 0.33;
+        currentDx = wheelDx; draggingBehindEl = behindCard();
+        top.wrap.classList.add('is-dragging'); top.card.style.willChange = 'transform';
+        scheduleDragVisuals();
+        if (wheelEndTimer) { window.clearTimeout(wheelEndTimer); }
+        wheelEndTimer = window.setTimeout(finishWheelGesture, 120);
+    }
+
     // Wraps whichever card is now on top with the drag affordances (built at
     // runtime, never in the .cshtml) and wires up its pointer/button
     // handlers. Called once at init and again every time a card is promoted.
@@ -702,17 +759,29 @@
         shadowRaised.setAttribute('aria-hidden', 'true');
         wrap.insertBefore(shadowRaised, cardEl);
 
+        // The tint and the stamp are siblings, not parent and child. Nesting the
+        // stamp inside the wash made it inherit the tint's opacity, so the verdict
+        // came out ghosted and the card's own text showed through it. They ramp
+        // together but to different ceilings: the tint stays translucent so the
+        // candidate is still readable, the stamp goes fully opaque.
         function buildWash(kind, label) {
             var wash = document.createElement('div');
             wash.className = 'match-card-wash match-card-wash--' + kind;
             wash.setAttribute('aria-hidden', 'true');
+            cardEl.appendChild(wash);
+
+            var stampLayer = document.createElement('div');
+            stampLayer.className = 'match-card-stamp-layer match-card-stamp-layer--' + kind;
+            stampLayer.setAttribute('aria-hidden', 'true');
 
             var stamp = document.createElement('span');
             stamp.className = 'match-card-stamp';
             stamp.textContent = label;
 
-            wash.appendChild(stamp);
-            cardEl.appendChild(wash);
+            stampLayer.appendChild(stamp);
+            cardEl.appendChild(stampLayer);
+
+            wash.stampLayer = stampLayer;
             return wash;
         }
 
@@ -729,6 +798,7 @@
         };
 
         cardEl.addEventListener('pointerdown', onPointerDown);
+        cardEl.addEventListener('wheel', onWheel, { passive: false });
 
         function onControlClick(direction) {
             return function (event) {
@@ -973,4 +1043,3 @@
         window.setTimeout(settle, 1500);
     });
 })();
-

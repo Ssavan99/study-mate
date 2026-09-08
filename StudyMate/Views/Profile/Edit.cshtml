@@ -121,33 +121,26 @@
             <button type="submit" form="addCourseForm" name="code" value=""
                     id="addExistingBtn" class="btn btn-primary" disabled>Add to schedule</button>
         </div>
-        <div class="form-group ml-auto">
-            <button type="button" class="btn btn-sm btn-link" data-toggle="collapse" data-target="#newCourseBox">
-                Course not listed?
-            </button>
-        </div>
     </div>
 
-    <div class="collapse mt-3" id="newCourseBox">
-        <div class="course-adder">
+    <details class="mt-3">
+        <summary class="btn btn-sm btn-link p-0">Can't find your course? Request it.</summary>
+        <form asp-action="RequestCourse" method="post" class="course-adder mt-2">
+            <div class="course-adder">
             <div class="form-group">
-                <label for="newCode">New course code</label>
-                <input type="text" id="newCode" name="code" form="addCourseForm" class="form-control" placeholder="CSCE 310" />
+                <label for="requestCode">Course code</label>
+                <input type="text" id="requestCode" name="code" class="form-control" placeholder="CSCE 310" />
             </div>
             <div class="form-group form-group--grow">
-                <label for="newTitle">Title</label>
-                <input type="text" id="newTitle" name="title" form="addCourseForm" class="form-control" placeholder="Data Structures and Algorithms" />
+                <label for="requestTitle">Title</label>
+                <input type="text" id="requestTitle" name="title" class="form-control" placeholder="Data Structures and Algorithms" />
             </div>
             <div class="form-group">
-                <button type="submit" form="addCourseForm" class="btn btn-outline-secondary">Create &amp; add</button>
+                <button type="submit" class="btn btn-outline-secondary">Send request</button>
             </div>
         </div>
-        <p class="text-muted small mt-2 mb-0">
-            This adds the course to @(string.IsNullOrWhiteSpace(Model.UniversityName) ? "your university" : Model.UniversityName)'s
-            list so classmates can pick it too. There's no official catalog to check it
-            against, so please enter it the way your school writes it.
-        </p>
-    </div>
+        </form>
+    </details>
 </section>
 
 <form id="removeCourseForm" asp-action="RemoveCourse" method="post" class="d-none">

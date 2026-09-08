@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using StudyMate.Data;
 using StudyMate.Models;
 using StudyMate.Services;
+using StudyMate.Tools;
 using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -257,6 +258,12 @@ var app = builder.Build();
 // probe start a server or seed against a half-migrated schema.
 if (app.Environment.IsEnvironment("DesignTime"))
 {
+    return;
+}
+
+if (Environment.GetEnvironmentVariable("IMPORT_UNL_CATALOG") == "1")
+{
+    await ImportUnlCatalog.WriteAsync(Path.Combine(app.Environment.ContentRootPath, "Data", "Catalog", "university-of-nebraska-lincoln.json"));
     return;
 }
 

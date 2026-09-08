@@ -11,7 +11,7 @@ namespace StudyMate.Services
     /// </summary>
     public static partial class CourseCodeParser
     {
-        [GeneratedRegex(@"^\s*([A-Za-z]{2,6}(?:\s+[A-Za-z]{1,6})?)\s*(\d{1,4})\s*$")]
+        [GeneratedRegex(@"^\s*([A-Za-z]{2,6}(?:\s+[A-Za-z]{1,6})?)\s*(\d{1,4}[Hh]?)\s*$")]
         private static partial Regex Pattern();
 
         /// <summary>

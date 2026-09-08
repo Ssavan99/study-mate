@@ -753,7 +753,9 @@ label {
        by the card's shadow and hairline together, not by the surface. */
     background-color: var(--surface-soft);
     border-radius: var(--radius-lg);
-    padding: 1.5rem;
+    padding: 2.5rem;
+    overflow: hidden;
+    overscroll-behavior-x: contain;
 }
 
 /* ============================================================================
@@ -793,6 +795,16 @@ html.js .match-stack > .match-card-wrap,
 html.js .match-stack > .match-card[data-stack-index="0"] {
     position: relative;
     z-index: 3;
+}
+
+/* The cards behind peek a little below the front one. That sliver used to be blank
+   card, but the safety row sits at the very bottom of a card, so the peek started
+   showing "Block …  Report profile" floating under the deck like stray text. Those
+   rows are not reachable on a non-top card anyway (pointer-events are off), so hide
+   them until the card is promoted. */
+html.js .match-stack > .match-card[data-stack-index="1"] .card-footer-safety,
+html.js .match-stack > .match-card[data-stack-index="2"] .card-footer-safety {
+    visibility: hidden;
 }
 
 html.js .match-stack > .match-card[data-stack-index="1"] { z-index: 2; }
@@ -1009,21 +1021,33 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     position: absolute;
     inset: 0;
     display: flex;
+    /* Centred on both axes. The card is dense — every edge has content, so a small
+       stamp anywhere reads as an accidental collision. Centred and large it reads as
+       a deliberate overlay, which is what it is. */
     align-items: center;
+    justify-content: center;
     opacity: 0;
     pointer-events: none;
 }
 
 .match-card-wash--right {
     background-color: var(--block-lime);
-    justify-content: flex-start;
-    padding-left: 2rem;
 }
 
 .match-card-wash--left {
     background-color: var(--block-pink);
-    justify-content: flex-end;
-    padding-right: 2rem;
+}
+
+/* Sibling of the tint, not a child of it — see buildWash() in site.js. Same box,
+   its own opacity, so the verdict stays crisp while the tint stays see-through. */
+.match-card-stamp-layer {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .match-card-stamp {
@@ -1032,16 +1056,20 @@ html.js .match-stack > .match-card[data-stack-index="2"] {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: 700;
-    font-size: 0.85rem;
+    font-size: 2rem;
     color: var(--ink);
     background-color: var(--canvas);
-    border: 2px solid var(--ink);
+    border: 4px solid var(--ink);
     border-radius: var(--radius-sm);
-    padding: 0.5rem 1rem;
+    padding: 0.6rem 1.6rem;
 }
 
-.match-card-wash--right .match-card-stamp {
-    transform: rotate(-8deg);
+.match-card-stamp-layer--right .match-card-stamp {
+    transform: rotate(-12deg);
+}
+
+.match-card-stamp-layer--left .match-card-stamp {
+    transform: rotate(12deg);
 }
 
 .match-card-wash--left .match-card-stamp {

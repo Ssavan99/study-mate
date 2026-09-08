@@ -21,6 +21,7 @@ namespace StudyMate.Data
         public DbSet<Report> Reports { get; set; }
         public DbSet<StudySession> StudySessions { get; set; }
         public DbSet<SessionParticipant> SessionParticipants { get; set; }
+        public DbSet<CourseRequest> CourseRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
