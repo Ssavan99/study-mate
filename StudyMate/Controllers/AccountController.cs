@@ -113,7 +113,7 @@ namespace StudyMate.Controllers
                 Name = model.Name.Trim(),
                 Email = email,
                 Major = model.Major.Trim(),
-                University = model.University.Trim(),
+                UniversityId = null,
                 Year = model.Year,
                 IsDemo = false
             };
@@ -173,19 +173,19 @@ namespace StudyMate.Controllers
                 return RedirectToAction(nameof(Login));
             }
 
-            // A brand-new GitHub-linked account starts with no University set, and
+            // A brand-new GitHub-linked account starts with no university set, and
             // University hard-filters matching — left blank, the account would never
             // see or appear in anyone's deck. Route straight to the profile instead of
             // dropping a silently broken account onto the matches page.
             var studentId = User.GetStudentId();
-            var university = studentId == null
-                ? null
+            var universityId = studentId == null
+                ? (int?)null
                 : await _db.Students
                     .Where(s => s.StudentId == studentId.Value)
-                    .Select(s => s.University)
+                    .Select(s => s.UniversityId)
                     .FirstOrDefaultAsync();
 
-            if (string.IsNullOrWhiteSpace(university))
+            if (!universityId.HasValue)
             {
                 return RedirectToAction("Edit", "Profile");
             }
@@ -196,6 +196,13 @@ namespace StudyMate.Controllers
         [HttpGet]
         public IActionResult AccessDenied() => View();
 
+        [HttpGet]
+        public IActionResult ExternalLoginFailed()
+        {
+            TempData["ExternalLoginError"] = "We could not verify this account as belonging to a recognised university. Try a university account or use a demo profile.";
+            return RedirectToAction(nameof(Login));
+        }
+
         private async Task SignInAsync(Student student)
         {
             var claims = new List<Claim>
@@ -204,6 +211,7 @@ namespace StudyMate.Controllers
                 new(ClaimTypes.Name, student.Name),
                 new(ClaimTypes.Email, student.Email)
             };
+            if (student.IsAdmin) claims.Add(new Claim("is_admin", "true"));
 
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 

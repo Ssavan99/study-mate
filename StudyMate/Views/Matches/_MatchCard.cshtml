@@ -71,4 +71,25 @@
             </button>
         </form>
     </div>
+
+    @* Safety controls sit below the decision row, not inside it: blocking and
+       reporting are rare, deliberate actions and should not compete with the two
+       choices this card exists to offer. They stay ordinary form posts — the
+       swipe script only ever intercepts forms carrying data-decision, so these
+       are untouched by it and work with JavaScript off. *@
+    <div class="card-footer card-footer-safety d-flex">
+        <form asp-controller="Safety" asp-action="Block" method="post" class="mr-3">
+            <input type="hidden" name="id" value="@Model.Candidate.StudentId" />
+            <button type="submit" class="btn btn-link btn-sm safety-link">
+                Block @Model.Candidate.Name.Split(' ')[0]
+            </button>
+        </form>
+        <form asp-controller="Safety" asp-action="Report" method="post">
+            <input type="hidden" name="id" value="@Model.Candidate.StudentId" />
+            <input type="hidden" name="reason" value="Other" />
+            <button type="submit" class="btn btn-link btn-sm safety-link">
+                Report profile
+            </button>
+        </form>
+    </div>
 </article>

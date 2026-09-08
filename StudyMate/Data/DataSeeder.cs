@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using StudyMate.Models;
+using StudyMate.Services;
 
 namespace StudyMate.Data
 {
@@ -24,6 +25,8 @@ namespace StudyMate.Data
         /// </summary>
         public static async Task SeedAsync(AppDbContext db, IPasswordHasher<Student> passwordHasher)
         {
+            var universities = await SeedUniversitiesAndCatalogAsync(db);
+
             if (await db.Students.AnyAsync())
             {
                 return;
@@ -37,31 +40,27 @@ namespace StudyMate.Data
 
             var random = new Random(RandomSeed);
 
-            var courses = BuildCourses();
-            db.Courses.AddRange(courses);
-            await db.SaveChangesAsync();
-
-            // Courses are scoped per university, so each school's catalog is indexed
-            // separately — a student can only ever be offered courses at their own school.
+            var courses = await db.Courses.ToListAsync();
             var coursesByUniversity = courses
-                .GroupBy(c => c.University)
+                .GroupBy(c => c.UniversityId)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
             var students = new List<Student>();
-            var personas = BuildPersonas(passwordHasher);
+            var personas = BuildPersonas(passwordHasher, universities[PrimaryUniversity].UniversityId);
             var usedNames = new HashSet<string>(personas.Select(s => s.Name));
             students.AddRange(personas);
             // 50 at the personas' university (so the demo decks stay full), 6 at a
             // second university that should never appear in anyone's matches there.
-            students.AddRange(BuildCrowd(random, passwordHasher, 50, PrimaryUniversity, usedNames));
-            students.AddRange(BuildCrowd(random, passwordHasher, 6, SecondaryUniversity, usedNames));
+            students.AddRange(BuildCrowd(random, passwordHasher, 50, universities[PrimaryUniversity].UniversityId, usedNames));
+            students.AddRange(BuildCrowd(random, passwordHasher, 6, universities[SecondaryUniversity].UniversityId, usedNames));
+            students.First(s => s.IsDemo).IsAdmin = true;
 
             db.Students.AddRange(students);
             await db.SaveChangesAsync();
 
             foreach (var student in students)
             {
-                AssignCourses(db, student, coursesByUniversity[student.University], random);
+                AssignCourses(db, student, coursesByUniversity[student.UniversityId!.Value], random);
                 AssignAvailability(db, student, random);
             }
 
@@ -79,76 +78,43 @@ namespace StudyMate.Data
         /// That difference is the whole reason courses are scoped per university rather
         /// than pooled globally.
         /// </summary>
-        private static List<Course> BuildCourses()
+        private static async Task<Dictionary<string, University>> SeedUniversitiesAndCatalogAsync(AppDbContext db)
         {
-            var nebraska = new (string Code, string Title)[]
+            var definitions = new[]
             {
-                ("CSCE 155", "Computer Science I"),
-                ("CSCE 156", "Computer Science II"),
-                ("CSCE 235", "Discrete Mathematics"),
-                ("CSCE 310", "Data Structures and Algorithms"),
-                ("CSCE 361", "Software Engineering"),
-                ("CSCE 411", "Operating Systems"),
-                ("CSCE 478", "Machine Learning"),
-                ("MATH 106", "Calculus I"),
-                ("MATH 107", "Calculus II"),
-                ("MATH 208", "Calculus III"),
-                ("MATH 314", "Linear Algebra"),
-                ("MATH 380", "Statistics and Probability"),
-                ("PHYS 211", "General Physics I"),
-                ("PHYS 212", "General Physics II"),
-                ("PHYS 361", "Classical Mechanics"),
-                ("BIOL 101", "General Biology"),
-                ("BIOL 206", "Genetics"),
-                ("BIOL 312", "Cell Biology"),
-                ("CHEM 109", "General Chemistry"),
-                ("CHEM 251", "Organic Chemistry"),
-                ("ECON 211", "Microeconomics"),
-                ("ECON 212", "Macroeconomics"),
-                ("ECON 417", "Econometrics"),
-                ("PSYC 181", "Introduction to Psychology"),
-                ("PSYC 350", "Research Methods")
+                new { Name = PrimaryUniversity, Slug = "university-of-nebraska-lincoln", Domains = new[] { "unl.edu" } },
+                new { Name = SecondaryUniversity, Slug = "iowa-state-university", Domains = new[] { "iastate.edu" } }
             };
-
-            var iowa = new (string Code, string Title)[]
+            var result = new Dictionary<string, University>();
+            foreach (var definition in definitions)
             {
-                ("CS 227", "Introduction to Programming"),
-                ("CS 228", "Data Structures"),
-                ("CS 311", "Design of Algorithms"),
-                ("CS 363", "Database Systems"),
-                ("MATH 165", "Calculus I"),
-                ("MATH 166", "Calculus II"),
-                ("MATH 207", "Matrices and Linear Algebra"),
-                ("STAT 231", "Probability and Statistics"),
-                ("PHYS 221", "Introduction to Classical Physics"),
-                ("BIOL 211", "Principles of Biology"),
-                ("CHEM 177", "General Chemistry I"),
-                ("ECON 101", "Principles of Microeconomics"),
-                ("PSYCH 101", "Introduction to Psychology")
-            };
-
-            var courses = new List<Course>();
-
-            foreach (var (code, title) in nebraska)
-            {
-                courses.Add(NewCourse(code, title, PrimaryUniversity));
+                var university = await db.Universities.Include(u => u.EmailDomains)
+                    .SingleOrDefaultAsync(u => u.Slug == definition.Slug);
+                if (university == null)
+                {
+                    university = new University { Name = definition.Name, Slug = definition.Slug, IsActive = true };
+                    db.Universities.Add(university);
+                }
+                foreach (var domain in definition.Domains.Where(domain => university.EmailDomains.All(d => d.Domain != domain)))
+                    university.EmailDomains.Add(new UniversityEmailDomain { Domain = domain });
+                result.Add(definition.Name, university);
             }
+            await db.SaveChangesAsync();
 
-            foreach (var (code, title) in iowa)
+            var catalogDirectory = Path.Combine(AppContext.BaseDirectory, "Data", "Catalog");
+            foreach (var university in result.Values)
             {
-                courses.Add(NewCourse(code, title, SecondaryUniversity));
+                var path = Path.Combine(catalogDirectory, $"{university.Slug}.json");
+                if (!File.Exists(path)) continue;
+                var existingCourses = await db.Courses.Where(c => c.UniversityId == university.UniversityId).ToListAsync();
+                foreach (var course in CatalogImportPlanner.MissingCourses(CatalogLoader.Load(path), existingCourses))
+                {
+                    db.Courses.Add(new Course { UniversityId = university.UniversityId, Code = course.Code, Title = course.Title, Department = course.Department });
+                }
             }
-
-            return courses;
+            await db.SaveChangesAsync();
+            return result;
         }
-
-        private static Course NewCourse(string code, string title, string university) => new()
-        {
-            Code = code,
-            Title = title,
-            Department = code.Split(' ')[0],
-            University = university
-        };
 
         // --- the four demo personas ------------------------------------------
 
@@ -158,7 +124,7 @@ namespace StudyMate.Data
         /// of them opens onto a populated deck rather than an empty one.
         /// </summary>
         /// <summary>All four demo personas share this university, so their decks are never empty.</summary>
-        public const string PrimaryUniversity = "University of Nebraska";
+        public const string PrimaryUniversity = "University of Nebraska–Lincoln";
 
         /// <summary>
         /// A second, smaller university seeded specifically so the same-university match
@@ -167,23 +133,23 @@ namespace StudyMate.Data
         /// </summary>
         public const string SecondaryUniversity = "Iowa State University";
 
-        private static List<Student> BuildPersonas(IPasswordHasher<Student> passwordHasher) => new()
+        private static List<Student> BuildPersonas(IPasswordHasher<Student> passwordHasher, int universityId) => new()
         {
             NewStudent(passwordHasher, "Maya Chen", "maya.chen@example.edu", "Computer Science", 3,
                 "Third year CS, deep in algorithms. I like working through problem sets out loud with someone.",
-                NoiseLevel.Discussion, StudyPace.Steady, GroupSize.OneOnOne, PrimaryUniversity, isDemo: true),
+                NoiseLevel.Discussion, StudyPace.Steady, GroupSize.OneOnOne, universityId, isDemo: true),
 
             NewStudent(passwordHasher, "Daniel Okafor", "daniel.okafor@example.edu", "Mathematics", 2,
                 "Maths major who mostly needs someone to sit with in the library and stay off my phone.",
-                NoiseLevel.Silent, StudyPace.Steady, GroupSize.OneOnOne, PrimaryUniversity, isDemo: true),
+                NoiseLevel.Silent, StudyPace.Steady, GroupSize.OneOnOne, universityId, isDemo: true),
 
             NewStudent(passwordHasher, "Priya Raman", "priya.raman@example.edu", "Computer Science", 4,
                 "Final year, juggling a capstone. Realistically I study in bursts before deadlines.",
-                NoiseLevel.Quiet, StudyPace.Crammer, GroupSize.SmallGroup, PrimaryUniversity, isDemo: true),
+                NoiseLevel.Quiet, StudyPace.Crammer, GroupSize.SmallGroup, universityId, isDemo: true),
 
             NewStudent(passwordHasher, "Sofia Duarte", "sofia.duarte@example.edu", "Biology", 2,
                 "Pre-med, so a lot of memorisation. Happy to quiz people if they quiz me back.",
-                NoiseLevel.Quiet, StudyPace.Mixed, GroupSize.Either, PrimaryUniversity, isDemo: true)
+                NoiseLevel.Quiet, StudyPace.Mixed, GroupSize.Either, universityId, isDemo: true)
         };
 
         // --- the surrounding crowd -------------------------------------------
@@ -246,7 +212,7 @@ namespace StudyMate.Data
             Random random,
             IPasswordHasher<Student> passwordHasher,
             int count,
-            string university,
+            int universityId,
             HashSet<string> usedNames)
         {
             var students = new List<Student>();
@@ -272,7 +238,7 @@ namespace StudyMate.Data
                     (NoiseLevel)random.Next(0, 3),
                     (StudyPace)random.Next(0, 3),
                     (GroupSize)random.Next(0, 3),
-                    university,
+                    universityId,
                     isDemo: false));
             }
 
@@ -289,7 +255,7 @@ namespace StudyMate.Data
             NoiseLevel noise,
             StudyPace pace,
             GroupSize group,
-            string university,
+            int universityId,
             bool isDemo)
         {
             var student = new Student
@@ -297,7 +263,7 @@ namespace StudyMate.Data
                 Name = name,
                 Email = email.ToLowerInvariant(),
                 Major = major,
-                University = university,
+                UniversityId = universityId,
                 Year = year,
                 Bio = bio,
                 PreferredNoise = noise,
@@ -429,7 +395,7 @@ namespace StudyMate.Data
                 // Same university only — a real request could never exist otherwise,
                 // since the deck it would have come from is already filtered that way.
                 var others = students
-                    .Where(s => !s.IsDemo && s.University == persona.University)
+                    .Where(s => !s.IsDemo && s.UniversityId == persona.UniversityId)
                     .ToList();
 
                 // Two people waiting on the persona's answer.

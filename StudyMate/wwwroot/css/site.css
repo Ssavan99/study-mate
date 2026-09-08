@@ -1760,6 +1760,31 @@ select.form-control:disabled {
     border-color: var(--hairline);
 }
 
+/* Safety controls on the match card: quiet, secondary, and deliberately not
+   competing with the two decisions above them. Ink at a light weight rather than
+   a grey, per the design system's "weight, not opacity, carries hierarchy". */
+.card-footer-safety {
+    padding-top: 0;
+    border-top: 0;
+    background-color: transparent;
+}
+
+.safety-link,
+.safety-link:hover,
+.safety-link:focus {
+    padding: 0;
+    color: var(--ink);
+    font-weight: 320;
+    font-size: 0.85rem;
+    text-decoration: underline;
+}
+
+.safety-link:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-xs);
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

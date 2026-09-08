@@ -1,0 +1,15 @@
+{
+  "departments": [
+    { "code": "COM S", "courses": [
+      { "code": "COM S 227", "title": "Object-oriented Programming" },
+      { "code": "COM S 228", "title": "Introduction to Data Structures" },
+      { "code": "COM S 311", "title": "Design and Analysis of Algorithms" },
+      { "code": "COM S 363", "title": "Introduction to Database Management Systems" }
+    ] },
+    { "code": "MATH", "courses": [
+      { "code": "MATH 165", "title": "Calculus I" },
+      { "code": "MATH 166", "title": "Calculus II" },
+      { "code": "MATH 207", "title": "Matrices and Linear Algebra" }
+    ] }
+  ]
+}

@@ -39,9 +39,13 @@ namespace StudyMate.Controllers
         /// request ends in a bare status code with no body — a 404 from routing, or a
         /// NotFound() from a controller — so it gets the same designed page as any
         /// other error instead of the host's blank default response.
+        ///
+        /// Deliberately NOT named StatusCode: that would hide
+        /// ControllerBase.StatusCode(int), so any call to the framework helper from
+        /// this controller would silently invoke the action instead.
         /// </summary>
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult StatusCode(int code)
+        public IActionResult HttpStatus(int code)
         {
             Response.StatusCode = code;
 

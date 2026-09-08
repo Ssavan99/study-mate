@@ -1,0 +1,5 @@
+@model IReadOnlyList<StudyMate.Models.StudySession>
+@{ ViewData["Title"]="Study sessions"; }
+<h1 class="page-title">Study sessions</h1><p class="page-subtitle">Sessions for courses on your schedule.</p>
+@if(!Model.Any()){<p class="text-muted">No sessions for your courses yet.</p>}
+@foreach(var session in Model){<article class="rail-card mb-3"><div class="section-label">@session.Course.Code · @session.Day @session.Block</div><strong>@session.Location</strong><span class="text-muted small d-block">@session.Participants.Count / @session.Capacity joined</span><a asp-action="Detail" asp-route-id="@session.Id" class="btn btn-sm btn-outline-secondary mt-2">Details</a></article>}

@@ -15,6 +15,12 @@ namespace StudyMate.Data
         public DbSet<AvailabilitySlot> AvailabilitySlots { get; set; }
         public DbSet<StudyRequest> StudyRequests { get; set; }
         public DbSet<Pass> Passes { get; set; }
+        public DbSet<University> Universities { get; set; }
+        public DbSet<UniversityEmailDomain> UniversityEmailDomains { get; set; }
+        public DbSet<Block> Blocks { get; set; }
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<StudySession> StudySessions { get; set; }
+        public DbSet<SessionParticipant> SessionParticipants { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,22 +35,32 @@ namespace StudyMate.Data
                 .HasIndex(s => s.Email)
                 .IsUnique();
 
-            // University is a hard match filter compared with ==, so it needs the same
-            // case-insensitive collation as Email — otherwise "UNL" and "unl" would
-            // silently never match each other.
-            modelBuilder.Entity<Student>()
-                .Property(s => s.University)
-                .UseCollation("NOCASE");
-
-            // Uniqueness is per university, not global: two schools can legitimately
-            // both have a "CSCE 310" and they are different courses.
             modelBuilder.Entity<Course>()
-                .Property(c => c.University)
-                .UseCollation("NOCASE");
+                .HasIndex(c => new { c.UniversityId, c.Code });
 
-            modelBuilder.Entity<Course>()
-                .HasIndex(c => new { c.University, c.Code })
+            modelBuilder.Entity<University>()
+                .HasIndex(u => u.Slug)
                 .IsUnique();
+
+            modelBuilder.Entity<UniversityEmailDomain>()
+                .Property(d => d.Domain)
+                .UseCollation("NOCASE");
+
+            modelBuilder.Entity<UniversityEmailDomain>()
+                .HasIndex(d => d.Domain)
+                .IsUnique();
+
+            modelBuilder.Entity<Student>()
+                .HasOne(s => s.University)
+                .WithMany(u => u.Students)
+                .HasForeignKey(s => s.UniversityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Course>()
+                .HasOne(c => c.University)
+                .WithMany(u => u.Courses)
+                .HasForeignKey(c => c.UniversityId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Enrollment>()
                 .HasKey(e => new { e.StudentId, e.CourseId });
@@ -65,6 +81,11 @@ namespace StudyMate.Data
 
             modelBuilder.Entity<Pass>()
                 .ToTable(t => t.HasCheckConstraint("CK_Pass_NotSelf", "StudentId <> PassedStudentId"));
+
+            modelBuilder.Entity<Block>().HasIndex(b => new { b.BlockerStudentId, b.BlockedStudentId }).IsUnique();
+            modelBuilder.Entity<Block>().ToTable(t => t.HasCheckConstraint("CK_Block_NotSelf", "BlockerStudentId <> BlockedStudentId"));
+            modelBuilder.Entity<Report>().ToTable(t => t.HasCheckConstraint("CK_Report_NotSelf", "ReporterStudentId <> ReportedStudentId"));
+            modelBuilder.Entity<SessionParticipant>().HasKey(p => new { p.SessionId, p.StudentId });
 
             // Two navigation paths from StudyRequest to Student, so both relationships are
             // configured explicitly. Both cascade: SQLite has no restriction on multiple

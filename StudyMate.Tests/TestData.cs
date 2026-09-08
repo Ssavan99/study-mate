@@ -12,10 +12,16 @@ namespace StudyMate.Tests
                 Code = code,
                 Title = $"Course {code}",
                 Department = code.Split(' ')[0],
-                University = university
+                UniversityId = UniversityIdFor(university)
             };
 
         public const string DefaultUniversity = "Test University";
+
+        public static IEnumerable<University> Universities() => new[]
+        {
+            new University { UniversityId = 1, Name = DefaultUniversity, Slug = "test-university" },
+            new University { UniversityId = 2, Name = "A Different University", Slug = "different-university" }
+        };
 
         public static Student Student(
             int id,
@@ -32,12 +38,15 @@ namespace StudyMate.Tests
                 Email = $"student{id}@example.edu",
                 PasswordHash = "not-a-real-hash",
                 Major = major,
-                University = university,
+                UniversityId = UniversityIdFor(university),
                 Year = 2,
                 PreferredNoise = noise,
                 Pace = pace,
                 PreferredGroupSize = group
             };
+
+        private static int UniversityIdFor(string university) =>
+            string.Equals(university, DefaultUniversity, StringComparison.OrdinalIgnoreCase) ? 1 : 2;
 
         /// <summary>Enrols the student and flags every course as seeking a partner.</summary>
         public static Student WithCourses(this Student student, params Course[] courses)

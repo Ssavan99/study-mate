@@ -19,13 +19,15 @@ namespace StudyMate.Models
         [StringLength(80)]
         public string Major { get; set; }
 
-        /// <summary>
-        /// Hard-filters matching: only students who share a university ever appear in
-        /// each other's decks. There is no catalog of real universities to validate
-        /// against, so this is free text, same as Major.
-        /// </summary>
-        [Required, StringLength(120)]
-        public string University { get; set; }
+        /// <summary>Null until an institutional sign-in has verified the affiliation.</summary>
+        public int? UniversityId { get; set; }
+
+        public University University { get; set; }
+
+        [EmailAddress, StringLength(160)]
+        public string VerifiedEmail { get; set; }
+
+        public DateTime? EmailVerifiedAt { get; set; }
 
         /// <summary>Year of study, 1-5. 5 covers graduate students.</summary>
         [Range(1, 5)]
@@ -56,6 +58,8 @@ namespace StudyMate.Models
         /// Accounts created through registration are never demo accounts.
         /// </summary>
         public bool IsDemo { get; set; }
+        public bool IsSuspended { get; set; }
+        public bool IsAdmin { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
