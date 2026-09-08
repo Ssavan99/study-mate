@@ -20,6 +20,7 @@ var port = Environment.GetEnvironmentVariable("PORT") ?? "10000";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddAuthorization(options => options.AddPolicy("RequireAdmin", policy => policy.RequireClaim("is_admin", "true")));
 
 // A relative SQLite path is resolved against the process working directory, which differs
 // between `dotnet run` from the repo root and from the project folder — quietly producing
@@ -72,9 +73,9 @@ var authentication = builder.Services.AddAuthentication(CookieAuthenticationDefa
             }
 
             var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
-            var stillExists = await db.Students.AsNoTracking().AnyAsync(s => s.StudentId == studentId.Value);
+            var student = await db.Students.AsNoTracking().FirstOrDefaultAsync(s => s.StudentId == studentId.Value);
 
-            if (!stillExists)
+            if (student == null || student.IsSuspended)
             {
                 context.RejectPrincipal();
                 await context.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);

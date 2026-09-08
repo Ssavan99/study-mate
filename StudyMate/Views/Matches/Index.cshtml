@@ -98,7 +98,16 @@ else
                             Connect
                         </button>
                     </form>
+                    <form asp-controller="Safety" asp-action="Block" method="post" class="ml-2">
+                        <input type="hidden" name="id" value="@current.Candidate.StudentId" />
+                        <button type="submit" class="btn btn-outline-secondary" title="Block this student">Block</button>
+                    </form>
                 </div>
+                <form asp-controller="Safety" asp-action="Report" method="post" class="card-footer pt-0 border-0">
+                    <input type="hidden" name="id" value="@current.Candidate.StudentId" />
+                    <input type="hidden" name="reason" value="Other" />
+                    <button type="submit" class="btn btn-sm btn-link text-muted p-0">Report profile</button>
+                </form>
             </article>
 
             <p class="text-center small mt-3 shortcut-hint">

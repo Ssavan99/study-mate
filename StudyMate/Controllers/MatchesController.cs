@@ -53,7 +53,8 @@ namespace StudyMate.Controllers
                 return BadRequest();
             }
 
-            if (!await _db.Students.AnyAsync(s => s.StudentId == id))
+            if (!await _db.Students.AnyAsync(s => s.StudentId == id && !s.IsSuspended) ||
+                SafetyPolicy.IsBlockedPair(studentId.Value, id, await _db.Blocks.AsNoTracking().ToListAsync()))
             {
                 return NotFound();
             }

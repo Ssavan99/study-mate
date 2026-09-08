@@ -53,6 +53,7 @@ namespace StudyMate.Data
             // second university that should never appear in anyone's matches there.
             students.AddRange(BuildCrowd(random, passwordHasher, 50, universities[PrimaryUniversity].UniversityId, usedNames));
             students.AddRange(BuildCrowd(random, passwordHasher, 6, universities[SecondaryUniversity].UniversityId, usedNames));
+            students.First(s => s.IsDemo).IsAdmin = true;
 
             db.Students.AddRange(students);
             await db.SaveChangesAsync();

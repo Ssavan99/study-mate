@@ -37,6 +37,10 @@
                             <li class="nav-item">
                                 <a class="nav-link" asp-controller="Profile" asp-action="Edit">Profile</a>
                             </li>
+                            @if (User.HasClaim("is_admin", "true"))
+                            {
+                                <li class="nav-item"><a class="nav-link" asp-controller="Moderation" asp-action="Index">Moderation</a></li>
+                            }
                         }
                     </ul>
                     <ul class="navbar-nav">

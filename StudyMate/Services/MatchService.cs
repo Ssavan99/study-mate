@@ -30,6 +30,8 @@ namespace StudyMate.Services
             }
 
             var excludedIds = await ExcludedIdsAsync(studentId, cancellationToken);
+            excludedIds.UnionWith(SafetyPolicy.ExcludedStudentIds(studentId,
+                await _db.Blocks.AsNoTracking().ToListAsync(cancellationToken)));
             excludedIds.Add(studentId);
 
             // University is a hard filter, not a scoring input: a cross-university pair
@@ -37,7 +39,7 @@ namespace StudyMate.Services
             var candidates = await _db.Students
                 .AsNoTracking()
                 .Where(s => !excludedIds.Contains(s.StudentId) &&
-                            viewer.UniversityId.HasValue && s.UniversityId == viewer.UniversityId)
+                            viewer.UniversityId.HasValue && s.UniversityId == viewer.UniversityId && !s.IsSuspended)
                 .Include(s => s.Enrollments).ThenInclude(e => e.Course)
                 .Include(s => s.Availability)
                 // Two collection includes in one query multiply rows together; split them

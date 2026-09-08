@@ -58,6 +58,8 @@ namespace StudyMate.Models
         /// Accounts created through registration are never demo accounts.
         /// </summary>
         public bool IsDemo { get; set; }
+        public bool IsSuspended { get; set; }
+        public bool IsAdmin { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
