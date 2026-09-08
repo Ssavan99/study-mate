@@ -26,13 +26,19 @@ concrete reasons behind it, in plain language.
 ![The match review deck](docs/screenshots/match-deck.png)
 
 Candidates arrive one at a time so a decision is a single choice rather than a
-comparison across a table. Cards can be swiped — drag right to connect, left to
-skip — and the card tilts, lifts and reveals the decision as you drag, so the
-outcome is visible before you commit to it. Everything the swipe does, the two
-buttons and the <kbd>C</kbd> / <kbd>N</kbd> shortcuts also do: the gesture is
-layered on top of ordinary form posts, so the deck works with JavaScript off.
-With `prefers-reduced-motion` set, the card still follows your finger but the
-rotation, lift and fly-off are dropped.
+comparison across a table. Drag a card right to connect or left to skip; it tilts,
+lifts and shows the decision before you commit to it. On a trackpad a two-finger
+swipe does the same thing without holding a click — the browser's own
+swipe-to-go-back is suppressed over the card so the gesture belongs to the deck.
+
+Three cards are rendered as a real stack, so a decision is instant: the card leaves,
+the next one is already behind it, and the choice posts in the background. The page
+never reloads between candidates.
+
+Everything the swipe does, the two buttons and the <kbd>C</kbd> / <kbd>N</kbd>
+shortcuts also do. The gesture is layered on top of ordinary form posts, so the deck
+still works with JavaScript off. With `prefers-reduced-motion` set the card still
+follows your finger, but the rotation, lift and fly-off are dropped.
 
 The same ranking is also available in full, so the ordering itself is visible:
 
@@ -116,10 +122,15 @@ Profiles drive the matching, so the schedule and a weekly availability grid are 
 substance of the profile page. Courses belong to a university — different schools
 genuinely use different abbreviations and numbering, so "CSCE 155" at one school and
 "CS 227" at another are separate courses, and you only ever see your own school's
-catalog. You add courses through a department → course pair of dropdowns, with a
-free-text fallback for anything not yet listed (validated as a department code plus a
-number, and reused if someone else already added it rather than fragmenting into
-near-duplicates).
+catalog. You add courses through a department → course pair of dropdowns, filled from
+the university's real catalog — for Nebraska-Lincoln that is **171 departments and
+7,712 courses**, imported from the university's own course bulletin.
+
+There is deliberately no way to type a course in by hand. Free-text entry was how the
+same class ended up in the catalog three times under three spellings, which quietly
+splits the pool of people you could have matched with. If a course genuinely is
+missing you can request it: the request goes to moderation and only becomes a course
+once it is approved, so nothing unvetted reaches anyone else's dropdown.
 
 Each course on your schedule has its own switch for whether you actually want a study
 partner in it.
@@ -193,6 +204,10 @@ running the service, not for watching the people using it.
 ASP.NET Core 8 MVC · C# · Razor · Entity Framework Core 8 · SQLite · Bootstrap 4 ·
 xUnit · Docker
 
+Course data comes from the [UNL course bulletin](https://bulletin.unl.edu/developers),
+which publishes subjects and courses as JSON with no key or account required. It is
+read once by an import step, never per request.
+
 Authentication is cookie-based with passwords hashed via ASP.NET Core's
 `PasswordHasher`. Signing in with an institutional account is the path that proves
 which university a student belongs to: the provider returns an already-verified email
@@ -214,11 +229,15 @@ This is a demonstration deployment, and it is worth being specific about what th
   edits and uploaded profile photos are all lost on restart, redeploy, and after an
   idle spin-down. Within a session everything persists normally. The seeded data
   always returns intact.
-- **Only the seeded universities have a course catalog.** A university is a real
-  record with its own recognised email domains and its own course list, so students
-  pick courses rather than typing them. That list is seeded from a checked-in file;
-  a university nobody has added yet falls back to free-text entry, with the same
-  department-code-plus-number validation as before.
+- **Only Nebraska-Lincoln has a full catalog.** A university is a real record with
+  its own recognised email domains and its own course list. UNL's is complete because
+  its bulletin publishes course data openly; adding another school means importing
+  its catalog the same way. Until that happens, students there can only reach courses
+  through the request queue.
+- **The catalog is a snapshot, not a feed.** It is imported once and checked in, so
+  the app has no runtime dependency on the university and works offline and on a cold
+  start. Course listings change once a semester; re-running the import is a
+  deliberate act, not something that happens on its own.
 - **The first request after an idle period takes about a minute.** The free tier spins
   the service down after 15 minutes without traffic.
 - **It is still not built to hold real personal data.** Blocking, reporting and a
